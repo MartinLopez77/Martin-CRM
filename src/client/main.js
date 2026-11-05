@@ -36,6 +36,9 @@ import '../features/sequences/schema.js';
 import '../features/sequences/store.js';
 import '../features/sequences/views.js';
 import '../features/sequences/actions.js';
+import '../features/import/store.js';
+import '../features/import/views.js';
+import '../features/import/actions.js';
 import { iniciar } from '../legacy.js';
 
 iniciar();

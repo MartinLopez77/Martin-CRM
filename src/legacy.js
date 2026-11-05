@@ -1,6 +1,6 @@
 // @ts-nocheck: se tipa al moverlo a src/features/ (este archivo desaparece al terminar la refactorización).
 // Código de las features que todavía no se han movido a src/features/ (se va vaciando fase a fase).
-import { ESTADOS_LEAD, TIPOS_PROP } from './features/companies/schema.js';
+import { TIPOS_PROP } from './features/companies/schema.js';
 import {
   contactosDeEmpresa, empresa, empresaDe, empresaPorNombre, estadoLeadDe, propsEmpresa, propVisible,
 } from './features/companies/store.js';
@@ -15,7 +15,6 @@ import { vistaSecuenciaDetalle, vistaSecuencias } from './features/sequences/vie
 import { activarTareas, modalRapido } from './features/tasks/editor.js';
 import { vistaTareas } from './features/tasks/views/list.js';
 import { acciones } from './shared/actions.js';
-import { leerArchivoTexto, leerCSV } from './shared/lib/csv.js';
 import { fmtFecha, horaActual, horaLocal, hoy } from './shared/lib/dates.js';
 import { ahora, esc, iniciales, normalizar, uid } from './shared/lib/text.js';
 import { guardar } from './shared/persistence.js';
@@ -26,7 +25,6 @@ import { activarEditores, ajustarScroll } from './shared/ui/editor-md.js';
 import { campo, opciones } from './shared/ui/html.js';
 import { ico } from './shared/ui/icons.js';
 import { abrirModal, botonBorrarModal, modal } from './shared/ui/modal.js';
-import { avisar } from './shared/ui/toast.js';
 
 // El CRM trabaja en hora de España (la de los clientes). En Ajustes se puede añadir una hora
 // secundaria (p. ej. la de Malasia), que se muestra entre paréntesis.
@@ -374,164 +372,6 @@ function modalPropEmpresa(p) {
   $('[name=tipo]', modal).addEventListener('change', (e) => $('#prop-opciones', modal).classList.toggle('oculto', e.target.value !== 'opciones'));
 }
 
-export const nombresImportaciones = () =>
-  [...new Set([...db.imports.map((i) => i.nombre), ...db.contacts.map((c) => c.importacion).filter(Boolean)])];
-
-// Campos a los que se puede llevar cada columna del CSV; `alias` sirve para adivinarlo por la cabecera.
-const CAMPOS_IMPORTAR = [
-  { id: 'nombre', label: 'Nombre completo', alias: ['nombre completo', 'name', 'full name', 'contacto', 'nombre y apellidos'] },
-  { id: 'pila', label: 'Nombre', alias: ['nombre', 'first name', 'firstname', 'first_name'] },
-  { id: 'apellidos', label: 'Apellidos', alias: ['apellidos', 'apellido', 'last name', 'lastname', 'last_name', 'surname'] },
-  { id: 'email', label: 'Email', alias: ['email', 'e-mail', 'correo', 'correo electronico', 'mail', 'email address'] },
-  { id: 'telefono', label: 'Teléfono', alias: ['telefono', 'phone', 'phone number', 'movil', 'mobile', 'mobile phone number', 'tel'] },
-  { id: 'empresa', label: 'Empresa', alias: ['empresa', 'company', 'company name', 'compania', 'organizacion', 'nombre de la empresa'] },
-  { id: 'cargo', label: 'Cargo', alias: ['cargo', 'job title', 'puesto', 'title', 'position'] },
-  { id: 'ciudad', label: 'Ciudad', alias: ['ciudad', 'city', 'localidad', 'poblacion'] },
-  { id: 'web', label: 'Web', alias: ['web', 'website', 'website url', 'url', 'dominio', 'domain', 'pagina web', 'company domain name'] },
-  { id: 'origen', label: 'Origen', alias: ['origen', 'source', 'fuente', 'lead source'] },
-  { id: 'etiquetas', label: 'Etiquetas', alias: ['etiquetas', 'tags'] },
-  { id: 'estadoLead', label: 'Estado lead (empresa)', alias: ['estado lead', 'lead status', 'estado del lead'] },
-];
-
-const adivinarCampo = (cabecera) => CAMPOS_IMPORTAR.find((f) => f.alias.includes(normalizar(cabecera)))?.id || '';
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// Separa las filas en contactos nuevos y descartadas: solo entra un contacto si su email es válido y único
-// (que no exista ya en el CRM ni esté repetido dentro del propio archivo).
-function analizarImportacion(filas, mapa) {
-  const existentes = new Set(db.contacts.map((c) => normalizar(c.email)).filter(Boolean));
-  const vistos = new Set();
-  const r = { nuevos: [], duplicados: 0, repetidos: 0, sinEmail: 0 };
-  filas.forEach((fila) => {
-    const o = {};
-    mapa.forEach((campoId, i) => { if (campoId && fila[i]?.trim()) o[campoId] = fila[i].trim(); });
-    const email = normalizar(o.email);
-    if (!EMAIL_RE.test(email)) r.sinEmail++;
-    else if (existentes.has(email)) r.duplicados++;
-    else if (vistos.has(email)) r.repetidos++;
-    else {
-      vistos.add(email);
-      r.nuevos.push({ ...o, email });
-    }
-  });
-  return r;
-}
-
-function modalImportar() {
-  let filas = [];
-  let mapa = [];
-  abrirModal('Importar contactos desde CSV', `
-    <p class="muted small">La primera fila del archivo tiene que ser la de los nombres de las columnas. Solo se importan contactos con un <b>email único</b>: si ya hay un contacto con ese email, o el email está repetido en el archivo, esa fila se salta.</p>
-    ${campo('Archivo CSV *', '<input type="file" name="archivo" accept=".csv,text/csv,.txt" required>')}
-    ${campo('Nombre de la importación *', '<input name="nombreImp" required placeholder="Ej. Clínicas Madrid noviembre">')}
-    <div id="imp-mapa"></div>
-    <div id="imp-resumen"></div>
-  `, (d) => {
-    const nombreImp = d.nombreImp.trim();
-    if (!nombreImp) return false;
-    if (nombresImportaciones().some((n) => normalizar(n) === normalizar(nombreImp))) {
-      alert(`Ya hay una importación llamada «${nombreImp}». Ponle otro nombre para poder distinguirlas.`);
-      return false;
-    }
-    if (!mapa.includes('email')) {
-      alert('Indica qué columna es la del email.');
-      return false;
-    }
-    const r = analizarImportacion(filas, mapa);
-    if (!r.nuevos.length) {
-      alert('No hay ningún contacto nuevo que importar.');
-      return false;
-    }
-    const empresasAntes = new Set(db.companies.map((e) => e.id));
-    r.nuevos.forEach((o) => {
-      const e = o.empresa ? empresaPorNombre(o.empresa) : null;
-      if (e && !empresasAntes.has(e.id)) {
-        e.importacion = nombreImp;
-        if (o.web && !e.web) e.web = o.web;
-        if (o.ciudad && !e.ciudad) e.ciudad = o.ciudad;
-      }
-      // "Open deal", "open_deal" o "✅ Open deal": se acepta el valor interno o la etiqueta, con o sin emoji.
-      const sinEmoji = (s) => normalizar(s.replace(/^\P{L}+/u, ''));
-      const lead = o.estadoLead && ESTADOS_LEAD.find((x) =>
-        [x.id, x.id.replace('_', ' '), x.label].map(sinEmoji).includes(sinEmoji(o.estadoLead)));
-      if (e && lead && !e.estadoLead) e.estadoLead = lead.id;
-      db.contacts.push({
-        id: uid(),
-        nombre: o.nombre || [o.pila, o.apellidos].filter(Boolean).join(' ') || o.email.split('@')[0],
-        companyId: e?.id || null,
-        ownerId: YO,
-        cargo: o.cargo || '',
-        email: o.email,
-        telefono: o.telefono || '',
-        web: o.web || '',
-        ciudad: o.ciudad || '',
-        estado: 'nuevo',
-        origen: o.origen || 'Importación',
-        etiquetas: (o.etiquetas || '').split(/[,;]/).map((x) => x.trim()).filter(Boolean),
-        importacion: nombreImp,
-        creado: ahora(),
-        actualizado: ahora(),
-      });
-    });
-    db.imports.push({ id: uid(), nombre: nombreImp, fecha: hoy(), creados: r.nuevos.length, duplicados: r.duplicados + r.repetidos, sinEmail: r.sinEmail, creado: ahora() });
-    guardar();
-    cargarVista('todos');
-    ui.filtros.importacion = nombreImp;
-    if (location.hash === '#/' || location.hash === '') render();
-    else location.hash = '#/';
-    avisar(`${r.nuevos.length} contacto${r.nuevos.length === 1 ? '' : 's'} importado${r.nuevos.length === 1 ? '' : 's'} en «${nombreImp}»`);
-  });
-
-  const form = $('form', modal);
-  $('.modal-actions .primary', modal).textContent = 'Importar contactos';
-  const pintarResumen = () => {
-    if (!filas.length) return;
-    const r = analizarImportacion(filas, mapa);
-    $('#imp-resumen', modal).innerHTML = `
-      <div class="imp-resumen ${r.nuevos.length ? '' : 'vacio'}">
-        <b>${r.nuevos.length} contacto${r.nuevos.length === 1 ? '' : 's'} nuevo${r.nuevos.length === 1 ? '' : 's'}</b> de ${filas.length} fila${filas.length === 1 ? '' : 's'}
-        ${r.duplicados ? `<div class="small">· ${r.duplicados} ya ${r.duplicados === 1 ? 'existe' : 'existen'} en el CRM (mismo email): no se ${r.duplicados === 1 ? 'importa' : 'importan'}</div>` : ''}
-        ${r.repetidos ? `<div class="small">· ${r.repetidos} con el email repetido en el archivo: solo entra la primera fila</div>` : ''}
-        ${r.sinEmail ? `<div class="small">· ${r.sinEmail} sin email válido: no se ${r.sinEmail === 1 ? 'importa' : 'importan'}</div>` : ''}
-        ${mapa.includes('email') ? '' : '<div class="small txt-danger">Falta indicar la columna del email.</div>'}
-      </div>`;
-  };
-
-  form.archivo.addEventListener('change', async () => {
-    const archivo = form.archivo.files[0];
-    if (!archivo) return;
-    const todas = leerCSV(await leerArchivoTexto(archivo));
-    if (todas.length < 2) {
-      $('#imp-mapa', modal).innerHTML = '<p class="txt-danger small">El archivo no tiene filas de datos.</p>';
-      filas = [];
-      return;
-    }
-    const [cabeceras, ...resto] = todas;
-    filas = resto;
-    mapa = cabeceras.map(adivinarCampo);
-    if (!form.nombreImp.value.trim()) form.nombreImp.value = `${archivo.name.replace(/\.[^.]+$/, '')} · ${fmtFecha(hoy())}`;
-    $('#imp-mapa', modal).innerHTML = `
-      <div class="field"><span>Columnas del archivo → datos del contacto</span>
-        <div class="imp-tabla">
-          ${cabeceras.map((cab, i) => `
-            <div class="imp-fila">
-              <span class="grow"><strong>${esc(cab) || `Columna ${i + 1}`}</strong><span class="muted small truncate">${esc(filas.find((f) => f[i]?.trim())?.[i] || '')}</span></span>
-              <select data-col="${i}">
-                <option value="">No importar</option>
-                ${CAMPOS_IMPORTAR.map((f) => `<option value="${f.id}" ${f.id === mapa[i] ? 'selected' : ''}>${f.label}</option>`).join('')}
-              </select>
-            </div>`).join('')}
-        </div>
-      </div>`;
-    pintarResumen();
-  });
-  $('#imp-mapa', modal).addEventListener('change', (e) => {
-    if (!e.target.dataset.col) return;
-    mapa[+e.target.dataset.col] = e.target.value;
-    pintarResumen();
-  });
-}
-
 // Datos de versiones anteriores: la empresa era un texto en cada contacto y no había propietarios.
 function migrar() {
   let cambios = false;
@@ -604,14 +444,6 @@ Object.assign(acciones, {
     cargarVista('todos');
     ui.filtros.ownerId = el.dataset.id;
     location.hash = '#/';
-  },
-  // Importar CSV y propiedades de empresa
-  'importar-csv': () => modalImportar(),
-  'ver-importacion': (el) => {
-    cargarVista('todos');
-    ui.filtros.importacion = el.dataset.nombre;
-    if (rutaActual().ruta) location.hash = '#/';
-    else render();
   },
   'nueva-prop-empresa': () => modalPropEmpresa(),
   'editar-prop-empresa': (el) => modalPropEmpresa(db.settings.propsEmpresaExtra.find((p) => p.id === el.dataset.id)),
