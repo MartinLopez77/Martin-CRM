@@ -4,7 +4,7 @@ import { empresaDe } from '../companies/store.js';
 import { accionesDe } from '../activity/store.js';
 import { pendientesDe, proximaTarea } from '../tasks/store.js';
 import { inscripcionActiva } from '../sequences/store.js';
-import { nombreUsuario } from '../../legacy.js';
+import { nombreUsuario } from '../team/store.js';
 import { horaActual, hoy } from '../../shared/lib/dates.js';
 import { ahora, uid } from '../../shared/lib/text.js';
 import { db, ui } from '../../shared/state.js';

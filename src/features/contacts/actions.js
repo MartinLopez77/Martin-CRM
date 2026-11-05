@@ -4,7 +4,7 @@ import { cambiarContacto, cargarVista, contactoExistente, seleccionados, vistaAc
 import { modalMasivo, modalVista, renderTablaContactos } from './views/list.js';
 import { modalContacto } from './views/modal.js';
 import { modalInscribir } from '../sequences/views.js';
-import { opcionesUsuarios, YO } from '../../legacy.js';
+import { opcionesUsuarios, YO } from '../team/store.js';
 import { registrarAcciones } from '../../shared/actions.js';
 import { ahora } from '../../shared/lib/text.js';
 import { guardar } from '../../shared/persistence.js';

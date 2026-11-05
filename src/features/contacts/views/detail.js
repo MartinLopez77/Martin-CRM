@@ -16,7 +16,7 @@ import { tareaHTML } from '../../tasks/views/list.js';
 import { enModoCola, limpiarCola, tareaColaActual } from '../../queue/store.js';
 import { activarNotaCola, cabeceraColaHTML, prepararLlamadaCola, tareaColaHTML } from '../../queue/views.js';
 import { inscripcionActiva, secuencia } from '../../sequences/store.js';
-import { opcionesUsuarios } from '../../../legacy.js';
+import { opcionesUsuarios } from '../../team/store.js';
 import { textoProp } from '../../../shared/schema.js';
 import { fmtFecha, horaActual, hoy } from '../../../shared/lib/dates.js';
 import { ahora, esc, iniciales, uid } from '../../../shared/lib/text.js';

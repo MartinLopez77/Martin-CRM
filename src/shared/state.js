@@ -8,19 +8,29 @@
  * @property {import('../features/tasks/schema.js').Tarea[]} tasks
  * @property {import('../features/activity/schema.js').AccionRealizada[]} actions
  * @property {import('../features/companies/schema.js').Empresa[]} companies
- * @property {any[]} users
+ * @property {import('../features/team/store.js').Usuario[]} users
  * @property {import('../features/contacts/schema.js').VistaContactos[]} views
  * @property {import('../features/tasks/schema.js').VistaTareas[]} taskViews
  * @property {any[]} imports
  * @property {import('../features/sequences/schema.js').Secuencia[]} sequences
  * @property {import('../features/sequences/schema.js').Inscripcion[]} enrollments
- * @property {Record<string, any>} settings
+ * @property {Ajustes} settings
  */
 
+/**
+ * Ajustes (#/ajustes).
+ * @typedef {Object} Ajustes
+ * @property {boolean} horaSecundaria mostrar también la hora de otra zona entre paréntesis
+ * @property {string} zonaSecundaria
+ * @property {string[]} propsEmpresaOcultas propiedades de empresa desactivadas
+ * @property {import('../features/companies/schema.js').PropiedadPropia[]} propsEmpresaExtra propiedades de empresa propias
+ */
+
+/** @type {Pick<Ajustes, 'horaSecundaria' | 'zonaSecundaria'>} */
 export const AJUSTES_DEFECTO = { horaSecundaria: true, zonaSecundaria: 'Asia/Kuala_Lumpur' };
 
 /** @type {BaseDatos} */
-export let db = { contacts: [], notes: [], tasks: [], actions: [], companies: [], users: [], views: [], taskViews: [], imports: [], sequences: [], enrollments: [], settings: { ...AJUSTES_DEFECTO } };
+export let db = { contacts: [], notes: [], tasks: [], actions: [], companies: [], users: [], views: [], taskViews: [], imports: [], sequences: [], enrollments: [], settings: { ...AJUSTES_DEFECTO, propsEmpresaOcultas: [], propsEmpresaExtra: [] } };
 
 /** Sustituye los datos (al cargarlos del servidor). @param {BaseDatos} datos */
 export function setDb(datos) {
@@ -40,7 +50,7 @@ export const ui = {
   fichaTab: 'notas', // pestaña de la columna central de la ficha: notas, tareas, whatsapp, correo
   tareasVista: 'bandeja',
   tareasQ: '',
-  /** @type {any} editor de tarea abierto: { clave, fecha } */
+  /** @type {{ clave: string, fecha?: string } | null} editor «Añadir tarea» abierto (clave: el grupo en el que está) */
   editor: null,
   /** @type {string | null} */
   contactoActual: null,

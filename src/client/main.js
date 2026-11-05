@@ -39,6 +39,15 @@ import '../features/sequences/actions.js';
 import '../features/import/store.js';
 import '../features/import/views.js';
 import '../features/import/actions.js';
-import { iniciar } from '../legacy.js';
+import '../features/search/search.js';
+import '../features/team/store.js';
+import '../features/team/views.js';
+import '../features/team/actions.js';
+import '../features/settings/horas.js';
+import '../features/settings/views.js';
+import '../features/settings/actions.js';
+import './layout.js';
+import './vistas.js';
+import { iniciar } from './arranque.js';
 
 iniciar();

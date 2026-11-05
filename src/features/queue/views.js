@@ -7,7 +7,7 @@ import { colaActiva, limpiarCola } from './store.js';
 import { ICONO_CAL } from '../tasks/editor.js';
 import { prioridadDe, REUNIONES } from '../tasks/schema.js';
 import { tareaExistente, tareasParaHoy } from '../tasks/store.js';
-import { conLocal } from '../../legacy.js';
+import { conLocal } from '../settings/horas.js';
 import { claseFecha, fmtCuando } from '../../shared/lib/dates.js';
 import { markdown } from '../../shared/lib/markdown.js';
 import { esc } from '../../shared/lib/text.js';

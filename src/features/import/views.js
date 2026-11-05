@@ -3,7 +3,7 @@ import { ESTADOS_LEAD } from '../companies/schema.js';
 import { empresaPorNombre } from '../companies/store.js';
 import { cargarVista } from '../contacts/store.js';
 import { adivinarCampo, analizarImportacion, CAMPOS_IMPORTAR, nombresImportaciones } from './store.js';
-import { YO } from '../../legacy.js';
+import { YO } from '../team/store.js';
 import { leerArchivoTexto, leerCSV } from '../../shared/lib/csv.js';
 import { fmtFecha, hoy } from '../../shared/lib/dates.js';
 import { ahora, esc, normalizar, uid } from '../../shared/lib/text.js';

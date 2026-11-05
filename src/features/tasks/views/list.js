@@ -11,7 +11,8 @@ import {
   coincideTarea, cumpleFiltroTarea, diaCompletada, listasDeTareas, ordenTareas, vistaTareaPropia,
 } from '../store.js';
 import { inscripcion, secuencia } from '../../sequences/store.js';
-import { conLocal, nombreUsuario } from '../../../legacy.js';
+import { conLocal } from '../../settings/horas.js';
+import { nombreUsuario } from '../../team/store.js';
 import { claseFecha, fmtCuando, hoy, sumarDias, tituloDia } from '../../../shared/lib/dates.js';
 import { ahora, esc, uid } from '../../../shared/lib/text.js';
 import { guardar } from '../../../shared/persistence.js';

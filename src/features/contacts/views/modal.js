@@ -2,7 +2,7 @@
 import { CAMPOS_CONTACTO } from '../schema.js';
 import { cambiarContacto } from '../store.js';
 import { empresaDe, empresaPorNombre, empresasOrdenadas } from '../../companies/store.js';
-import { opcionesUsuarios, YO } from '../../../legacy.js';
+import { opcionesUsuarios, YO } from '../../team/store.js';
 import { ahora, esc, normalizar, uid } from '../../../shared/lib/text.js';
 import { guardar } from '../../../shared/persistence.js';
 import { render } from '../../../shared/router.js';

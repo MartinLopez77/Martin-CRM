@@ -4,7 +4,7 @@ import { tocar } from '../contacts/store.js';
 import { ACCION_A_NOTA } from '../notes/schema.js';
 import { nota } from '../notes/store.js';
 import { REUNIONES } from '../tasks/schema.js';
-import { conLocal } from '../../legacy.js';
+import { conLocal } from '../settings/horas.js';
 import { fmtFecha, fmtRelativa, hoy } from '../../shared/lib/dates.js';
 import { ahora, esc, uid } from '../../shared/lib/text.js';
 import { guardar } from '../../shared/persistence.js';
@@ -33,7 +33,7 @@ export function accionHTML(a) {
     </div>`;
 }
 
-/** Una tarea con tipo de acción, en «Próximas». @param {any} t tarea (se tipa con las tareas) */
+/** Una tarea con tipo de acción, en «Próximas». @param {import('../tasks/schema.js').Tarea} t */
 export function accionFuturaHTML(t) {
   const ta = tipoAccionDe(t.accion);
   const vencida = t.fecha && t.fecha < hoy();
@@ -51,7 +51,7 @@ export function accionFuturaHTML(t) {
       </div>
       <div class="tl-botones">
         <button class="btn sm hecho-btn" data-action="completar-accion" data-id="${t.id}" title="Marcar como hecha y pasarla a Realizadas">✓</button>
-        ${REUNIONES.includes(t.accion) ? `<button class="btn sm cancelada-btn" data-action="cancelar-reunion" data-id="${t.id}" title="La reunión no se hizo: pasa a Realizadas como «Reunión cancelada»">${ico('cancelado')}</button>` : ''}
+        ${REUNIONES.includes(/** @type {string} */ (t.accion)) ? `<button class="btn sm cancelada-btn" data-action="cancelar-reunion" data-id="${t.id}" title="La reunión no se hizo: pasa a Realizadas como «Reunión cancelada»">${ico('cancelado')}</button>` : ''}
       </div>
     </div>`;
 }

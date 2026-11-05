@@ -3,7 +3,7 @@
 // quedar en una nota, CAMPOS_HISTORIAL.
 import { defineCampos } from '../../shared/schema.js';
 import { empresa } from '../companies/store.js';
-import { nombreUsuario, YO } from '../../legacy.js';
+import { nombreUsuario, YO } from '../team/store.js';
 
 /**
  * @typedef {Object} Contacto
