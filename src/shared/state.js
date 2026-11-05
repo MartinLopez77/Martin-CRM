@@ -7,7 +7,7 @@
  * @property {any[]} notes
  * @property {any[]} tasks
  * @property {any[]} actions
- * @property {any[]} companies
+ * @property {import('../features/companies/schema.js').Empresa[]} companies
  * @property {any[]} users
  * @property {import('../features/contacts/schema.js').VistaContactos[]} views
  * @property {any[]} taskViews

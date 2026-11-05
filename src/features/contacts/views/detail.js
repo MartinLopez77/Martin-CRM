@@ -3,10 +3,13 @@ import { HUBSPOT_ESTADOS, urlHubspot } from '../schema.js';
 import { contacto, contactoExistente, tocar } from '../store.js';
 import { selectEstado } from './list.js';
 import {
+  contactosDeEmpresa, empresa, empresaDe, nurturingDe, propEmpresa, propVisible,
+} from '../../companies/store.js';
+import {
   accionesDe, accionFuturaHTML, accionHTML, activarNotaCola, anadirTareaHTML, cabeceraColaHTML,
-  contactosDeEmpresa, editorTareaHTML, empresa, empresaDe, enModoCola, inscripcionActiva, limpiarCola,
-  notasDe, nurturingDe, opcionesUsuarios, ordenTareas, pendientesDe, prepararLlamadaCola, propEmpresa,
-  propVisible, renderNotasContacto, secuencia, tareaColaActual, tareaColaHTML, tareaHTML, TIPOS_NOTA,
+  editorTareaHTML, enModoCola, inscripcionActiva, limpiarCola, notasDe, opcionesUsuarios, ordenTareas,
+  pendientesDe, prepararLlamadaCola, renderNotasContacto, secuencia, tareaColaActual, tareaColaHTML,
+  tareaHTML, TIPOS_NOTA,
 } from '../../../legacy.js';
 import { textoProp } from '../../../shared/schema.js';
 import { fmtFecha, horaActual, hoy } from '../../../shared/lib/dates.js';

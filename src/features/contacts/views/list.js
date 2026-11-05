@@ -4,9 +4,10 @@ import {
   cambiarContacto, cargarVista, filtrarContactos, ordenarContactos, seleccionados, todasLasVistas,
   vistaActual, vistaModificada
 } from '../store.js';
+import { empresa, empresasOrdenadas } from '../../companies/store.js';
 import {
-  accionesDe, avatarUsuario, conLocal, empresa, empresasOrdenadas, inscripcionActiva,
-  nombresImportaciones, nombreUsuario, pendientesDe, proximaTarea, secuencia, tipoAccionDe, usuario,
+  accionesDe, avatarUsuario, conLocal, inscripcionActiva, nombresImportaciones, nombreUsuario,
+  pendientesDe, proximaTarea, secuencia, tipoAccionDe, usuario,
 } from '../../../legacy.js';
 import { fmtFecha, fmtRelativa, hoy } from '../../../shared/lib/dates.js';
 import { ahora, esc, iniciales, uid } from '../../../shared/lib/text.js';

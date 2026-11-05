@@ -2,7 +2,8 @@
 // Para añadir un campo: el typedef Contacto, CAMPOS_CONTACTO (formulario) y, si sus cambios deben
 // quedar en una nota, CAMPOS_HISTORIAL.
 import { defineCampos } from '../../shared/schema.js';
-import { empresa, nombreUsuario, YO } from '../../legacy.js';
+import { empresa } from '../companies/store.js';
+import { nombreUsuario, YO } from '../../legacy.js';
 
 /**
  * @typedef {Object} Contacto

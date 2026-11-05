@@ -1,10 +1,14 @@
 // @ts-nocheck: se tipa al moverlo a src/features/ (este archivo desaparece al terminar la refactorización).
 // Código de las features que todavía no se han movido a src/features/ (se va vaciando fase a fase).
+import { ESTADOS_LEAD, TIPOS_PROP } from './features/companies/schema.js';
+import {
+  contactosDeEmpresa, empresa, empresaDe, empresaPorNombre, estadoLeadDe, propsEmpresa, propVisible,
+} from './features/companies/store.js';
+import { vistaEmpresa, vistaEmpresas } from './features/companies/views.js';
 import { estadoDe, ESTADOS, HUBSPOT_ESTADOS, urlHubspot } from './features/contacts/schema.js';
 import { cambiarContacto, cargarVista, contacto, contactosOrdenados, tocar } from './features/contacts/store.js';
 import { vistaContacto } from './features/contacts/views/detail.js';
-import { propietarioHTML, proximaTareaHTML, selectEstado, vistaContactos } from './features/contacts/views/list.js';
-import { modalContacto } from './features/contacts/views/modal.js';
+import { vistaContactos } from './features/contacts/views/list.js';
 import { acciones } from './shared/actions.js';
 import { leerArchivoTexto, leerCSV } from './shared/lib/csv.js';
 import {
@@ -16,7 +20,6 @@ import { accionDeTitulo, analizarFechas, quitarRangos } from './shared/lib/nlp.j
 import { ahora, esc, iniciales, normalizar, pad, uid } from './shared/lib/text.js';
 import { guardar } from './shared/persistence.js';
 import { definirRender, render, rutaActual } from './shared/router.js';
-import { inputProp, textoProp, valorProp } from './shared/schema.js';
 import { AJUSTES_DEFECTO, db, setDb, ui } from './shared/state.js';
 import { $, app } from './shared/ui/dom.js';
 import { activarEditores, ajustarScroll, comandoEditor, editorHTML } from './shared/ui/editor-md.js';
@@ -79,64 +82,6 @@ const ZONAS_SECUNDARIAS = [
 ];
 const zonaSecundaria = () => (db.settings?.horaSecundaria ? ZONAS_SECUNDARIAS.find((z) => z.id === db.settings.zonaSecundaria) : null);
 
-// Estado lead de las empresas: las mismas opciones que la propiedad Lead Status (hs_lead_status) de HubSpot.
-const ESTADOS_LEAD = [
-  { id: 'new', label: '🏁 New' },
-  { id: 'prospecting', label: '⏩ Prospecting' },
-  { id: 'conversation', label: '💬 Conversation' },
-  { id: 'meeting', label: '📆 Meeting' },
-  { id: 'open_deal', label: '✅ Open deal' },
-  { id: 'client', label: '🤝 Client' },
-  { id: 'nurturing_sdr', label: '♻ Nurturing SDR' },
-  { id: 'nurturing_ae', label: '♻️ Nurturing AE' },
-  { id: 'lost', label: '😢 Lost' },
-];
-const esNurturing = (estadoLead) => estadoLead === 'nurturing_sdr' || estadoLead === 'nurturing_ae';
-
-// Como «Nurturing reason SDR» de HubSpot.
-const NURTURING_REASONS = [
-  { id: 'sequence_finished', label: 'Sequence finished' },
-  { id: 'unreachable', label: 'Unreachable' },
-  { id: 'could_not_pass_gatekeeper', label: 'Could not pass the gatekeeper' },
-  { id: 'contact_in_future', label: 'Contact in the future (schedule task)' },
-  { id: 'could_not_get_pain', label: 'Could not get to the Pain' },
-  { id: 'no_pain', label: 'Has no pain' },
-  { id: 'satisfied_with_competitor', label: 'Satisfied with a competitor' },
-  { id: 'not_target', label: 'Not target' },
-  { id: 'double_no_show', label: 'Double no show' },
-  { id: 'company_not_exist', label: 'Company does not exist' },
-  { id: 'They are Anti AI', label: 'They are Anti AI' },
-  { id: 'DIY', label: 'DIY' },
-  { id: 'other', label: 'Other' },
-];
-
-// Propiedades de las empresas. En Ajustes se puede ocultar cualquiera y añadir otras propias
-// (db.settings.propsEmpresaExtra). Las de nurturing solo se ven si el estado lead es de nurturing.
-const PROPS_EMPRESA = [
-  { id: 'estadoLead', label: 'Estado lead', tipo: 'opciones', opciones: ESTADOS_LEAD },
-  { id: 'nurturingReason', label: 'Nurturing reason', tipo: 'opciones', opciones: NURTURING_REASONS, nurturing: true },
-  { id: 'nurturingFecha', label: 'Nurturing date', tipo: 'fecha', nurturing: true },
-  { id: 'nurturingComentarios', label: 'Nurturing comments', tipo: 'textoLargo', nurturing: true },
-  { id: 'web', label: 'Web', tipo: 'url', placeholder: 'empresa.com' },
-  { id: 'sector', label: 'Sector', tipo: 'texto', placeholder: 'Clínicas, reformas…' },
-  { id: 'ciudad', label: 'Ciudad', tipo: 'texto' },
-  { id: 'pais', label: 'País', tipo: 'texto' },
-  { id: 'direccion', label: 'Dirección', tipo: 'texto' },
-  { id: 'telefono', label: 'Teléfono', tipo: 'tel' },
-  { id: 'empleados', label: 'Nº de empleados', tipo: 'numero' },
-  { id: 'facturacion', label: 'Facturación anual', tipo: 'texto', placeholder: 'Ej. 1-5 M€' },
-  { id: 'linkedin', label: 'LinkedIn', tipo: 'url' },
-  { id: 'importacion', label: 'Importación', tipo: 'texto', soloLectura: true },
-];
-const TIPOS_PROP = [
-  { id: 'texto', label: 'Texto' },
-  { id: 'textoLargo', label: 'Texto largo' },
-  { id: 'numero', label: 'Número' },
-  { id: 'fecha', label: 'Fecha' },
-  { id: 'url', label: 'Enlace' },
-  { id: 'opciones', label: 'Desplegable (opciones)' },
-];
-
 // Usuario que usa el CRM. Cuando entre el resto del equipo, cada uno tendrá el suyo.
 export const YO = 'u-martin';
 
@@ -157,27 +102,11 @@ const nota = (id) => db.notes.find((n) => n.id === id);
 const accion = (id) => db.actions.find((a) => a.id === id);
 export const pendientesDe = (id) => db.tasks.filter((t) => t.contactId === id && !t.hecha);
 const prioridadPeso = (t) => ({ alta: 0, media: 1, baja: 2 }[t.prioridad] ?? 3);
-export const empresa = (id) => db.companies.find((e) => e.id === id);
-export const empresaDe = (c) => empresa(c?.companyId)?.nombre || '';
-export const empresasOrdenadas = () => [...db.companies].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-export const contactosDeEmpresa = (id) => db.contacts.filter((c) => c.companyId === id);
 export const usuario = (id) => db.users.find((u) => u.id === id);
 export const nombreUsuario = (id) => (id === YO ? `${usuario(YO)?.nombre || 'Yo'} (yo)` : usuario(id)?.nombre || 'Sin propietario');
 export const secuencia = (id) => db.sequences.find((s) => s.id === id);
 const inscripcion = (id) => db.enrollments.find((e) => e.id === id);
 export const inscripcionActiva = (contactId) => db.enrollments.find((e) => e.contactId === contactId && e.estado === 'activa');
-
-// Busca la empresa por nombre (sin distinguir mayúsculas) y, si no existe, la crea.
-export function empresaPorNombre(nombre) {
-  const n = nombre.trim();
-  if (!n) return null;
-  let e = db.companies.find((x) => x.nombre.toLowerCase() === n.toLowerCase());
-  if (!e) {
-    e = { id: uid(), nombre: n, web: '', sector: '', ciudad: '', notas: '', creado: ahora() };
-    db.companies.push(e);
-  }
-  return e;
-}
 
 export const avatarUsuario = (id) =>
   id ? `<span class="avatar xs" title="${esc(nombreUsuario(id))}">${esc(iniciales(usuario(id)?.nombre))}</span>` : '';
@@ -211,20 +140,6 @@ export const notasDe = (id) => db.notes.filter((n) => n.contactId === id).sort(o
 export const accionesDe = (id) =>
   db.actions.filter((a) => a.contactId === id)
     .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.hora || '').localeCompare(a.hora || '') || (b.creado || '').localeCompare(a.creado || ''));
-
-const propsEmpresa = () => [
-  ...PROPS_EMPRESA,
-  ...(db.settings.propsEmpresaExtra || []).map((p) => ({
-    ...p, extra: true, opciones: p.tipo === 'opciones' ? (p.opciones || []).map((o) => ({ id: o, label: o })) : undefined,
-  })),
-];
-export const propVisible = (p) => !(db.settings.propsEmpresaOcultas || []).includes(p.id);
-const propsVisibles = () => propsEmpresa().filter(propVisible);
-export const propEmpresa = (id) => propsEmpresa().find((p) => p.id === id);
-const estadoLeadDe = (id) => ESTADOS_LEAD.find((x) => x.id === id);
-
-// Las propiedades de nurturing de la empresa, si está en nurturing (para la ficha del contacto).
-export const nurturingDe = (e) => (e && esNurturing(e.estadoLead) ? NURTURING_REASONS.find((r) => r.id === e.nurturingReason)?.label || '' : '');
 const ICONO_CAL = ico('calendario');
 
 // Campo de título que reconoce fechas: el texto reconocido se resalta (con un "espejo" detrás del input)
@@ -657,177 +572,6 @@ function actualizarBadges() {
   b.textContent = pend.length || '';
   b.classList.toggle('alerta', vencidas > 0);
   b.title = vencidas ? `${vencidas} vencida${vencidas === 1 ? '' : 's'}` : '';
-}
-
-function vistaEmpresas() {
-  app.innerHTML = `
-    <div class="page-head">
-      <h1>Empresas <span class="h1-count">${db.companies.length}</span></h1>
-      <button class="btn primary" data-action="nueva-empresa">+ Nueva empresa</button>
-    </div>
-    <div class="toolbar filtros-bar">
-      <input type="search" id="e-q" class="grow" placeholder="Buscar empresa, sector o ciudad…" value="${esc(ui.empresasQ)}">
-      ${propVisible(propEmpresa('estadoLead')) ? `
-        <select id="e-estado" class="filtro ${ui.empresasEstado ? 'on' : ''}" title="Estado lead">
-          <option value="">Estado lead: todos</option>
-          <option value="ninguno" ${ui.empresasEstado === 'ninguno' ? 'selected' : ''}>Sin estado lead</option>
-          ${opciones(ESTADOS_LEAD, ui.empresasEstado)}
-        </select>` : ''}
-    </div>
-    <div id="tabla-empresas"></div>`;
-  $('#e-q').addEventListener('input', (e) => { ui.empresasQ = e.target.value; renderTablaEmpresas(); });
-  $('#e-estado')?.addEventListener('change', (e) => { ui.empresasEstado = e.target.value; vistaEmpresas(); });
-  renderTablaEmpresas();
-}
-
-// Columnas de la tabla de empresas: solo las propiedades que están activadas en Ajustes.
-const COLUMNAS_EMPRESA = ['estadoLead', 'sector', 'ciudad', 'web'];
-
-function renderTablaEmpresas() {
-  const cont = $('#tabla-empresas');
-  if (!db.companies.length) {
-    cont.innerHTML = `
-      <div class="empty card">
-        <p><strong>Aún no hay empresas.</strong></p>
-        <p class="muted">Se crean solas al poner la empresa de un contacto, o puedes añadirlas aquí.</p>
-        <button class="btn primary" data-action="nueva-empresa">+ Nueva empresa</button>
-      </div>`;
-    return;
-  }
-  const q = ui.empresasQ.trim().toLowerCase();
-  const fe = ui.empresasEstado;
-  const lista = empresasOrdenadas()
-    .filter((e) => !fe || (fe === 'ninguno' ? !e.estadoLead : e.estadoLead === fe))
-    .filter((e) => !q || [e.nombre, e.sector, e.ciudad, e.web].some((v) => (v || '').toLowerCase().includes(q)));
-  if (!lista.length) {
-    cont.innerHTML = '<div class="empty card"><p class="muted">Ninguna empresa coincide.</p></div>';
-    return;
-  }
-  const columnas = COLUMNAS_EMPRESA.map(propEmpresa).filter(propVisible);
-  cont.innerHTML = `
-    <div class="card table-wrap">
-      <table class="tabla">
-        <thead><tr><th>Empresa</th><th>Contactos</th>${columnas.map((p) => `<th class="${p.id === 'web' ? 'col-nota' : ''}">${esc(p.label)}</th>`).join('')}</tr></thead>
-        <tbody>
-          ${lista.map((e) => {
-            const cs = contactosDeEmpresa(e.id);
-            return `
-              <tr data-action="abrir-empresa" data-id="${e.id}">
-                <td><div class="persona centrado"><span class="avatar sm cuadrado">${ico('empresa')}</span><strong>${esc(e.nombre)}</strong></div></td>
-                <td class="small">${cs.length ? `${cs.length} <span class="muted">· ${esc(cs.slice(0, 2).map((c) => c.nombre).join(', '))}${cs.length > 2 ? '…' : ''}</span>` : '<span class="muted">0</span>'}</td>
-                ${columnas.map((p) => `<td class="small ${p.id === 'web' ? 'col-nota' : ''}">${textoProp(e, p) || '<span class="muted">—</span>'}${p.id === 'estadoLead' && nurturingDe(e) ? `<div class="muted">${esc(nurturingDe(e))}</div>` : ''}</td>`).join('')}
-              </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`;
-}
-
-function vistaEmpresa(id) {
-  const e = empresa(id);
-  const cs = contactosDeEmpresa(id).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  const dato = (label, valor) => (valor ? `<dt>${esc(label)}</dt><dd>${valor}</dd>` : '');
-  const datos = [
-    ...propsVisibles().filter((p) => !p.nurturing || esNurturing(e.estadoLead)).map((p) => dato(p.label, textoProp(e, p))),
-    dato('Alta', fmtFecha(e.creado)),
-  ].join('');
-  app.innerHTML = `
-    <a href="#/empresas" class="back">← Empresas</a>
-    <div class="empresa-grid">
-      <aside class="card tarjeta-contacto">
-        <div class="tc-cabecera">
-          <span class="avatar lg cuadrado">${ico('empresa')}</span>
-          <div class="grow">
-            <h1>${esc(e.nombre)}</h1>
-            <p class="muted small">${esc([e.sector, e.ciudad].filter(Boolean).join(' · ')) || '&nbsp;'}</p>
-          </div>
-          <span class="td-pop-wrap">
-            <button type="button" class="icon-btn" data-td-pop aria-haspopup="true" title="Más opciones">${ico('puntos')}</button>
-            <div class="td-pop pop-derecha" hidden>
-              <button type="button" data-action="editar-empresa" data-id="${e.id}">${ico('editar')} Editar empresa</button>
-              <button type="button" class="pop-peligro" data-action="borrar-empresa" data-id="${e.id}">${ico('papelera')} Eliminar empresa</button>
-            </div>
-          </span>
-        </div>
-        ${datos ? `<dl class="tc-datos">${datos}</dl>` : ''}
-        ${e.notas ? `<div class="md small empresa-notas">${markdown(e.notas)}</div>` : ''}
-      </aside>
-
-      <section class="empresa-contactos">
-        <div class="col-titulo">
-          <h2>Contactos <span class="count">${cs.length}</span></h2>
-          <div class="row">
-            <button class="btn sm primary" data-action="nuevo-contacto-empresa" data-id="${e.id}">+ Añadir contacto</button>
-          </div>
-        </div>
-        ${cs.length ? `
-          <div class="card table-wrap">
-            <table class="tabla">
-              <thead><tr><th>Contacto</th><th>Propietario</th><th>Estado</th><th>Próxima tarea</th></tr></thead>
-              <tbody>
-                ${cs.map((c) => `
-                  <tr data-action="abrir-contacto" data-id="${c.id}">
-                    <td><div class="persona"><span class="avatar sm">${esc(iniciales(c.nombre))}</span><div><strong>${esc(c.nombre)}</strong><div class="muted small">${esc(c.cargo)}</div></div></div></td>
-                    <td class="small">${propietarioHTML(c)}</td>
-                    <td>${selectEstado(c)}</td>
-                    <td class="small">${proximaTareaHTML(c)}</td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>` : '<div class="empty card"><p class="muted">Esta empresa todavía no tiene contactos.</p></div>'}
-      </section>
-    </div>`;
-}
-
-function modalEmpresa(e) {
-  const nueva = !e;
-  const v = e || {};
-  const editables = propsVisibles().filter((p) => !p.soloLectura);
-  const campoProp = (p) => campo(esc(p.label), inputProp(p, valorProp(v, p)), p.tipo === 'textoLargo' ? 'ancho' : '');
-  abrirModal(nueva ? 'Nueva empresa' : 'Editar empresa', `
-    ${campo('Nombre *', `<input name="nombre" required value="${esc(v.nombre)}">`)}
-    <div class="row2 props-grid">
-      ${editables.filter((p) => !p.nurturing).map(campoProp).join('')}
-    </div>
-    ${editables.some((p) => p.nurturing) ? `
-      <fieldset class="nurturing-campos" ${esNurturing(v.estadoLead) ? '' : 'hidden'}>
-        <legend>♻ Nurturing</legend>
-        <div class="row2 props-grid">${editables.filter((p) => p.nurturing).map(campoProp).join('')}</div>
-      </fieldset>` : ''}
-    <div class="field"><span>Notas</span>${editorHTML('notas', v.notas || '', 4, 'Lo que sepas de la empresa: sedes, tamaño, quién decide…')}</div>
-  `, (d) => {
-    const nombre = d.nombre.trim();
-    if (!nombre) return false;
-    const otra = db.companies.find((x) => x !== e && x.nombre.toLowerCase() === nombre.toLowerCase());
-    if (otra) {
-      alert(`Ya existe la empresa «${otra.nombre}».`);
-      return false;
-    }
-    // Las propiedades ocultas en Ajustes no se tocan: conservan el valor que tuvieran.
-    const datos = { nombre, notas: d.notas.trim() };
-    const extra = { ...(v.extra || {}) };
-    editables.forEach((p) => {
-      const valor = String(d[`p-${p.id}`] ?? '').trim();
-      if (p.extra) extra[p.id] = valor;
-      else datos[p.id] = valor;
-    });
-    datos.extra = extra;
-    if (nueva) {
-      const ne = { id: uid(), creado: ahora(), ...datos };
-      db.companies.push(ne);
-      guardar();
-      location.hash = '#/empresa/' + ne.id;
-    } else {
-      Object.assign(e, datos);
-      guardar();
-      render();
-    }
-  });
-  // Las propiedades de nurturing aparecen al poner la empresa en nurturing (como en HubSpot).
-  $('[name="p-estadoLead"]', modal)?.addEventListener('change', (ev) => {
-    const caja = $('.nurturing-campos', modal);
-    if (caja) caja.hidden = !esNurturing(ev.target.value);
-  });
 }
 
 function vistaEquipo() {
@@ -2615,20 +2359,6 @@ export async function iniciar() {
 }
 
 Object.assign(acciones, {
-  // Empresas
-  'nueva-empresa': () => modalEmpresa(),
-  'editar-empresa': (el) => modalEmpresa(empresa(el.dataset.id)),
-  'abrir-empresa': (el) => { location.hash = '#/empresa/' + el.dataset.id; },
-  'nuevo-contacto-empresa': (el) => modalContacto(null, el.dataset.id),
-  'borrar-empresa': (el) => {
-    const e = empresa(el.dataset.id);
-    const n = contactosDeEmpresa(e.id).length;
-    if (!confirm(`¿Eliminar la empresa «${e.nombre}»?${n ? ` Sus ${n} contactos se conservan, sin empresa.` : ''}`)) return;
-    db.contacts.forEach((c) => { if (c.companyId === e.id) c.companyId = null; });
-    db.companies = db.companies.filter((x) => x.id !== e.id);
-    guardar();
-    location.hash = '#/empresas';
-  },
   // Equipo
   'nuevo-usuario': () => modalUsuario(),
   'editar-usuario': (el) => modalUsuario(usuario(el.dataset.id)),
