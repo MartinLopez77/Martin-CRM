@@ -20,6 +20,12 @@ import '../features/activity/schema.js';
 import '../features/activity/store.js';
 import '../features/activity/views.js';
 import '../features/activity/actions.js';
+import '../features/tasks/schema.js';
+import '../features/tasks/store.js';
+import '../features/tasks/editor.js';
+import '../features/tasks/views/list.js';
+import '../features/tasks/views/modal.js';
+import '../features/tasks/actions.js';
 import { iniciar } from '../legacy.js';
 
 iniciar();

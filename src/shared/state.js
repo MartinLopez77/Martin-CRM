@@ -5,12 +5,12 @@
  * @typedef {Object} BaseDatos
  * @property {import('../features/contacts/schema.js').Contacto[]} contacts
  * @property {import('../features/notes/schema.js').Nota[]} notes
- * @property {any[]} tasks
+ * @property {import('../features/tasks/schema.js').Tarea[]} tasks
  * @property {import('../features/activity/schema.js').AccionRealizada[]} actions
  * @property {import('../features/companies/schema.js').Empresa[]} companies
  * @property {any[]} users
  * @property {import('../features/contacts/schema.js').VistaContactos[]} views
- * @property {any[]} taskViews
+ * @property {import('../features/tasks/schema.js').VistaTareas[]} taskViews
  * @property {any[]} imports
  * @property {any[]} sequences
  * @property {any[]} enrollments

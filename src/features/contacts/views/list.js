@@ -7,9 +7,9 @@ import {
 import { empresa, empresasOrdenadas } from '../../companies/store.js';
 import { tipoAccionDe } from '../../activity/schema.js';
 import { accionesDe } from '../../activity/store.js';
+import { pendientesDe, proximaTarea } from '../../tasks/store.js';
 import {
-  avatarUsuario, conLocal, inscripcionActiva, nombresImportaciones, nombreUsuario, pendientesDe,
-  proximaTarea, secuencia, usuario,
+  avatarUsuario, conLocal, inscripcionActiva, nombresImportaciones, nombreUsuario, secuencia, usuario,
 } from '../../../legacy.js';
 import { fmtFecha, fmtRelativa, hoy } from '../../../shared/lib/dates.js';
 import { ahora, esc, iniciales, uid } from '../../../shared/lib/text.js';

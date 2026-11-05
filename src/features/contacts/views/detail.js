@@ -10,10 +10,12 @@ import { accionFuturaHTML, accionHTML } from '../../activity/views.js';
 import { TIPOS_NOTA } from '../../notes/schema.js';
 import { notasDe } from '../../notes/store.js';
 import { renderNotasContacto } from '../../notes/views.js';
+import { anadirTareaHTML, editorTareaHTML } from '../../tasks/editor.js';
+import { ordenTareas, pendientesDe } from '../../tasks/store.js';
+import { tareaHTML } from '../../tasks/views/list.js';
 import {
-  activarNotaCola, anadirTareaHTML, cabeceraColaHTML, editorTareaHTML, enModoCola, inscripcionActiva,
-  limpiarCola, opcionesUsuarios, ordenTareas, pendientesDe, prepararLlamadaCola, secuencia,
-  tareaColaActual, tareaColaHTML, tareaHTML,
+  activarNotaCola, cabeceraColaHTML, enModoCola, inscripcionActiva, limpiarCola, opcionesUsuarios,
+  prepararLlamadaCola, secuencia, tareaColaActual, tareaColaHTML,
 } from '../../../legacy.js';
 import { textoProp } from '../../../shared/schema.js';
 import { fmtFecha, horaActual, hoy } from '../../../shared/lib/dates.js';

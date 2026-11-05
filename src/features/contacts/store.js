@@ -2,7 +2,8 @@
 import { CAMPOS_HISTORIAL, ESTADOS, FILTROS_VACIOS, ORDEN_DEFECTO, VISTAS_BASE } from './schema.js';
 import { empresaDe } from '../companies/store.js';
 import { accionesDe } from '../activity/store.js';
-import { inscripcionActiva, nombreUsuario, pendientesDe, proximaTarea } from '../../legacy.js';
+import { pendientesDe, proximaTarea } from '../tasks/store.js';
+import { inscripcionActiva, nombreUsuario } from '../../legacy.js';
 import { horaActual, hoy } from '../../shared/lib/dates.js';
 import { ahora, uid } from '../../shared/lib/text.js';
 import { db, ui } from '../../shared/state.js';

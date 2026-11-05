@@ -1,7 +1,7 @@
 // Acciones realizadas: botones (data-action).
 import { accionExistente } from './store.js';
 import { modalAccion } from './views.js';
-import { modalTarea } from '../../legacy.js';
+import { modalTarea } from '../tasks/views/modal.js';
 import { registrarAcciones } from '../../shared/actions.js';
 
 registrarAcciones({

@@ -6,20 +6,22 @@ import {
   contactosDeEmpresa, empresa, empresaDe, empresaPorNombre, estadoLeadDe, propsEmpresa, propVisible,
 } from './features/companies/store.js';
 import { vistaEmpresa, vistaEmpresas } from './features/companies/views.js';
-import { estadoDe, ESTADOS } from './features/contacts/schema.js';
+import { estadoDe } from './features/contacts/schema.js';
 import { cambiarContacto, cargarVista, contacto, contactosOrdenados, tocar } from './features/contacts/store.js';
 import { vistaContacto } from './features/contacts/views/detail.js';
 import { vistaContactos } from './features/contacts/views/list.js';
 import { ACCION_A_NOTA } from './features/notes/schema.js';
 import { nota } from './features/notes/store.js';
+import { activarTareas, ICONO_CAL, modalRapido } from './features/tasks/editor.js';
+import { prioridadDe, PRIORIDADES, REUNIONES } from './features/tasks/schema.js';
+import { completarTarea, marcarTarea, tarea, tareasDeLaVista, tareasParaHoy } from './features/tasks/store.js';
+import { vistaTareas } from './features/tasks/views/list.js';
 import { acciones } from './shared/actions.js';
 import { leerArchivoTexto, leerCSV } from './shared/lib/csv.js';
 import {
-  claseFecha, diaSemana, fechaAtajo, fmtCuando, fmtFecha, fmtRelativa, horaActual, horaLocal, hoy,
-  partesEn, sumarDias, tituloDia, ZONA,
+  claseFecha, fmtCuando, fmtFecha, fmtRelativa, horaActual, horaLocal, hoy, sumarDias,
 } from './shared/lib/dates.js';
 import { markdown } from './shared/lib/markdown.js';
-import { accionDeTitulo, analizarFechas, quitarRangos } from './shared/lib/nlp.js';
 import { ahora, esc, iniciales, normalizar, pad, uid } from './shared/lib/text.js';
 import { guardar } from './shared/persistence.js';
 import { definirRender, render, rutaActual } from './shared/router.js';
@@ -28,19 +30,8 @@ import { $, app } from './shared/ui/dom.js';
 import { activarEditores, ajustarScroll, editorHTML } from './shared/ui/editor-md.js';
 import { campo, campoFecha, opciones } from './shared/ui/html.js';
 import { ico } from './shared/ui/icons.js';
-import { abrirModal, alAbrirModal, botonBorrarModal, modal } from './shared/ui/modal.js';
+import { abrirModal, botonBorrarModal, modal } from './shared/ui/modal.js';
 import { avisar } from './shared/ui/toast.js';
-
-// Como en Todoist: P1 (roja) … P4 (sin prioridad, la de por defecto).
-const PRIORIDADES = [
-  { id: 'alta', label: 'Prioridad 1' },
-  { id: 'media', label: 'Prioridad 2' },
-  { id: 'baja', label: 'Prioridad 3' },
-  { id: 'ninguna', label: 'Prioridad 4' },
-];
-
-// Tareas de reunión: además de completarlas se pueden marcar como canceladas.
-export const REUNIONES = ['reunion', 'videollamada'];
 
 // El CRM trabaja en hora de España (la de los clientes). En Ajustes se puede añadir una hora
 // secundaria (p. ej. la de Malasia), que se muestra entre paréntesis.
@@ -68,296 +59,16 @@ const enLocal = (texto) => {
   return z ? `<span class="local" title="Hora de ${z.label}">(${texto} ${z.sufijo})</span>` : '';
 };
 export const conLocal = (hhmm, fecha) => (hhmm ? `${hhmm} ${zonaSecundaria() ? enLocal(horaLocal(hhmm, fecha, true, zonaSecundaria().id)) : ''}`.trim() : '');
-const prioridadDe = (id) => PRIORIDADES.find((p) => p.id === id) || PRIORIDADES[3];
-const tarea = (id) => db.tasks.find((t) => t.id === id);
-export const pendientesDe = (id) => db.tasks.filter((t) => t.contactId === id && !t.hecha);
-const prioridadPeso = (t) => ({ alta: 0, media: 1, baja: 2 }[t.prioridad] ?? 3);
 export const usuario = (id) => db.users.find((u) => u.id === id);
 export const nombreUsuario = (id) => (id === YO ? `${usuario(YO)?.nombre || 'Yo'} (yo)` : usuario(id)?.nombre || 'Sin propietario');
 export const secuencia = (id) => db.sequences.find((s) => s.id === id);
-const inscripcion = (id) => db.enrollments.find((e) => e.id === id);
+export const inscripcion = (id) => db.enrollments.find((e) => e.id === id);
 export const inscripcionActiva = (contactId) => db.enrollments.find((e) => e.contactId === contactId && e.estado === 'activa');
 
 export const avatarUsuario = (id) =>
   id ? `<span class="avatar xs" title="${esc(nombreUsuario(id))}">${esc(iniciales(usuario(id)?.nombre))}</span>` : '';
 export const opcionesUsuarios = (sel, vacio = 'Sin propietario') =>
   `<option value="">${vacio}</option>${db.users.map((u) => `<option value="${u.id}" ${u.id === sel ? 'selected' : ''}>${esc(nombreUsuario(u.id))}</option>`).join('')}`;
-
-// Hora a la que toca una tarea.
-const horaEfectiva = (t) => t.hora || '';
-
-// Con fecha primero (más próxima antes); a igual fecha, por hora y luego por prioridad.
-export function ordenTareas(a, b) {
-  if (a.fecha && b.fecha && a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
-  if (!!a.fecha !== !!b.fecha) return a.fecha ? -1 : 1;
-  const ha = horaEfectiva(a), hb = horaEfectiva(b);
-  if (ha !== hb) {
-    if (!ha || !hb) return ha ? -1 : 1;
-    return ha.localeCompare(hb);
-  }
-  return prioridadPeso(a) - prioridadPeso(b);
-}
-
-export const proximaTarea = (id) => pendientesDe(id).sort(ordenTareas)[0];
-const ICONO_CAL = ico('calendario');
-
-// Campo de título que reconoce fechas: el texto reconocido se resalta (con un "espejo" detrás del input)
-// y al guardar se quita del título.
-const tituloNlp = (valor, placeholder, extra = '') => `
-  <span class="nlp">
-    <span class="nlp-espejo" aria-hidden="true"></span>
-    <input name="titulo" data-nlp required autocomplete="off" value="${esc(valor)}" placeholder="${esc(placeholder)}" ${extra}>
-  </span>`;
-
-function activarNlp(raiz = document) {
-  raiz.querySelectorAll('input[data-nlp]:not([data-nlp-on])').forEach((input) => {
-    input.dataset.nlpOn = '1';
-    const form = input.form;
-    const espejo = input.parentElement.querySelector('.nlp-espejo');
-    // aplicado: la fecha/hora del formulario la ha puesto el título · base: el valor que había antes
-    // ignorar: texto que no se vuelve a aplicar porque después se cambió la fecha a mano
-    const st = { aplicado: {}, base: {}, ignorar: {}, rangos: [] };
-    input._nlp = st;
-
-    const pintar = () => {
-      const v = input.value;
-      let html = '';
-      let pos = 0;
-      [...st.rangos].sort((a, b) => a.ini - b.ini).forEach((r) => {
-        html += `${esc(v.slice(pos, r.ini))}<mark>${esc(v.slice(r.ini, r.fin))}</mark>`;
-        pos = r.fin;
-      });
-      espejo.innerHTML = html + esc(v.slice(pos));
-      espejo.scrollLeft = input.scrollLeft;
-    };
-
-    input.addEventListener('input', () => {
-      const r = analizarFechas(input.value);
-      st.rangos = [];
-      for (const tipo of ['fecha', 'hora']) {
-        const campo = form.elements[tipo];
-        if (!campo) continue;
-        const rango = r.rangos.find((x) => x.tipo === tipo);
-        const texto = rango && input.value.slice(rango.ini, rango.fin).toLowerCase();
-        if (st.ignorar[tipo] && st.ignorar[tipo] !== texto) delete st.ignorar[tipo];
-        if (rango && !st.ignorar[tipo]) {
-          if (!st.aplicado[tipo]) st.base[tipo] = campo.value;
-          campo.value = r[tipo];
-          st.aplicado[tipo] = true;
-          st.rangos.push(rango);
-        } else if (st.aplicado[tipo]) {
-          campo.value = st.base[tipo]; // se ha borrado la palabra: vuelve la fecha de antes
-          st.aplicado[tipo] = false;
-        }
-      }
-      pintar();
-      pintarChipFecha(form);
-    });
-    ['scroll', 'keyup', 'click', 'select'].forEach((ev) => input.addEventListener(ev, () => (espejo.scrollLeft = input.scrollLeft)));
-
-    // Si se cambia la fecha o la hora a mano, manda eso y la palabra se queda en el título.
-    ['fecha', 'hora'].forEach((tipo) => form.elements[tipo]?.addEventListener('change', () => {
-      const rango = st.rangos.find((x) => x.tipo === tipo);
-      if (!rango) return;
-      st.ignorar[tipo] = input.value.slice(rango.ini, rango.fin).toLowerCase();
-      st.aplicado[tipo] = false;
-      st.rangos = st.rangos.filter((x) => x !== rango);
-      pintar();
-    }));
-    pintar();
-  });
-}
-
-// Título a guardar: sin las palabras que se han convertido en fecha u hora.
-function tituloLimpio(input) {
-  const rangos = input._nlp?.rangos || [];
-  return (rangos.length && quitarRangos(input.value, rangos)) || input.value.trim();
-}
-
-// Mientras se escribe el título, el tipo de acción lo sigue. Si se elige a mano, ya no se toca.
-document.addEventListener('input', (e) => {
-  const input = e.target;
-  if (!input.matches?.('input[data-nlp]')) return;
-  const sel = input.form?.elements.accion;
-  if (!sel || sel.dataset.manual) return;
-  if (!('base' in sel.dataset)) sel.dataset.base = sel.value;
-  sel.value = accionDeTitulo(input.value) || sel.dataset.base;
-});
-
-document.addEventListener('change', (e) => {
-  if (e.target.name === 'accion' && e.target.form?.querySelector('input[data-nlp]')) e.target.dataset.manual = '1';
-});
-
-const OPCIONES_FECHA_TD = [
-  ['hoy', 'Hoy', 'calendario'], ['manana', 'Mañana', 'sol'], ['finde', 'Este fin de semana', 'sofa'],
-  ['lunes', 'Próxima semana', 'flecha'], ['sin', 'Sin fecha', 'cancelado'],
-];
-
-const chipFecha = (fecha, hora) => `
-  <span class="td-pop-wrap">
-    <button type="button" class="td-chip td-chip-fecha" data-td-pop aria-haspopup="true"></button>
-    <div class="td-pop" hidden>
-      ${OPCIONES_FECHA_TD.map(([id, label, icono]) => `
-        <button type="button" data-td-fecha="${id}">
-          <span class="td-pop-icono">${ico(icono)}</span>${label}<small>${id === 'sin' ? '' : diaSemana(fechaAtajo(id), 'short')}</small>
-        </button>`).join('')}
-      <div class="td-pop-campos">
-        <input type="date" name="fecha" value="${esc(fecha || '')}" aria-label="Fecha">
-        <input type="time" name="hora" value="${esc(hora || '')}" title="Hora de España" aria-label="Hora (España)">
-      </div>
-    </div>
-  </span>`;
-
-// Con `lista` (aunque sea '') es una tarea general: en vez de contacto se elige la lista.
-export function editorTareaHTML({ fecha = hoy(), contactId = '', fijo = false, lista } = {}) {
-  const c = fijo && contacto(contactId);
-  const general = lista !== undefined;
-  return `
-    <form class="td-editor">
-      ${tituloNlp('', 'Nombre de la tarea (p. ej. Llamar a Ana mañana a las 17)', 'class="td-editor-titulo"')}
-      <input name="detalle" class="td-editor-desc" placeholder="Descripción" autocomplete="off">
-      <div class="td-chips">
-        ${chipFecha(fecha, '')}
-        <select name="prioridad" class="td-chip td-chip-prio" data-prio="ninguna" title="Prioridad">${opciones(PRIORIDADES, 'ninguna')}</select>
-        <select name="accion" class="td-chip" title="Si es una acción hacia el cliente, aparecerá en sus Próximas acciones">
-          <option value="">Tarea interna</option>
-          ${opciones(TIPOS_ACCION, '')}
-        </select>
-        <button type="button" class="td-chip" data-td-nota>${ico('nota')} Nota</button>
-      </div>
-      <div class="td-nota" hidden>${editorHTML('nota', '', 4, 'Lo que quieras tener presente para esta tarea…')}</div>
-      <div class="td-pie">
-        ${general ? `<input type="hidden" name="contactId" value="">${campoLista(lista, 'td-proyecto-select')}`
-          : c ? `<input type="hidden" name="contactId" value="${c.id}"><span class="td-proyecto-fijo">${ico('persona')} ${esc(c.nombre)}</span>` : `
-          <select name="contactId" class="td-proyecto-select" title="Contacto">
-            <option value="">Sin contacto</option>
-            ${contactosOrdenados().map((x) => `<option value="${x.id}" ${x.id === contactId ? 'selected' : ''}>${esc(x.nombre)}${empresaDe(x) ? ` · ${esc(empresaDe(x))}` : ''}</option>`).join('')}
-          </select>`}
-        <span class="grow"></span>
-        <button type="button" class="btn" data-td-cancelar>Cancelar</button>
-        <button class="btn td-primario">Añadir tarea</button>
-      </div>
-    </form>`;
-}
-
-const listasDeTareas = () => [...new Set([...db.tasks.map((t) => t.lista).filter(Boolean), ...ui.listasNuevas])].sort((a, b) => a.localeCompare(b, 'es'));
-const campoLista = (valor, clase = '') => `
-  <input name="lista" class="${clase}" list="listas-tareas" autocomplete="off" value="${esc(valor || '')}" placeholder="# General" title="Lista (para tareas sin contacto)">
-  <datalist id="listas-tareas">${listasDeTareas().map((l) => `<option value="${esc(l)}">`).join('')}</datalist>`;
-
-export const anadirTareaHTML = (clave, fecha = '') => `
-  <button class="td-anadir" data-action="abrir-editor" data-clave="${clave}" data-fecha="${fecha}"><span class="td-mas">+</span> Añadir tarea</button>`;
-
-function pintarChipFecha(form) {
-  const chip = form.querySelector('.td-chip-fecha');
-  if (!chip) return;
-  const f = form.elements.fecha.value;
-  const h = form.elements.hora.value;
-  chip.className = `td-chip td-chip-fecha ${f ? claseFecha(f) : ''}`;
-  chip.innerHTML = f ? `${ICONO_CAL}${fmtCuando(f)}${h ? ` ${h}` : ''}` : h ? `${ico('reloj')} ${h}` : `${ICONO_CAL}Fecha`;
-}
-
-alAbrirModal(activarTareas);
-
-function activarTareas(raiz = document) {
-  activarNlp(raiz);
-  raiz.querySelectorAll('.td-editor').forEach(pintarChipFecha);
-}
-
-const cerrarPops = (salvo) => document.querySelectorAll('.td-pop:not([hidden])').forEach((p) => p !== salvo && (p.hidden = true));
-
-function cerrarEditor(form) {
-  if (form.closest('dialog')) return modal.close();
-  ui.editor = null;
-  render();
-}
-
-document.addEventListener('click', (e) => {
-  const pop = e.target.closest('.td-pop');
-  const abrir = e.target.closest('[data-td-pop]');
-  cerrarPops(pop || abrir?.nextElementSibling);
-  if (abrir) abrir.nextElementSibling.hidden = !abrir.nextElementSibling.hidden;
-
-  const opcion = e.target.closest('[data-td-fecha]');
-  if (opcion) {
-    const form = opcion.closest('form');
-    form.elements.fecha.value = fechaAtajo(opcion.dataset.tdFecha);
-    if (opcion.dataset.tdFecha === 'sin') form.elements.hora.value = '';
-    form.elements.fecha.dispatchEvent(new Event('change', { bubbles: true }));
-    opcion.closest('.td-pop').hidden = true;
-  }
-  if (e.target.closest('[data-td-nota]')) {
-    const caja = e.target.closest('form').querySelector('.td-nota');
-    caja.hidden = !caja.hidden;
-    if (!caja.hidden) caja.querySelector('textarea').focus();
-  }
-  if (e.target.closest('[data-td-cancelar]')) cerrarEditor(e.target.closest('form'));
-});
-
-document.addEventListener('change', (e) => {
-  const form = e.target.closest('.td-editor');
-  if (!form) return;
-  if (e.target.name === 'fecha' || e.target.name === 'hora') pintarChipFecha(form);
-  if (e.target.name === 'prioridad') e.target.dataset.prio = e.target.value;
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  const abierto = document.querySelector('.td-pop:not([hidden])');
-  if (abierto) {
-    e.preventDefault();
-    abierto.hidden = true;
-    return;
-  }
-  const form = e.target.closest?.('.td-editor');
-  if (form && !form.closest('dialog') && !e.target.closest('.editor.completa')) cerrarEditor(form);
-});
-
-// Guarda la tarea del editor y lo deja abierto para la siguiente, como Todoist.
-document.addEventListener('submit', (e) => {
-  const f = e.target;
-  if (!f.matches('.td-editor')) return;
-  e.preventDefault();
-  const d = Object.fromEntries(new FormData(f));
-  const titulo = tituloLimpio(f.elements.titulo);
-  if (!titulo) return;
-  const t = {
-    id: uid(),
-    titulo,
-    detalle: d.detalle.trim(),
-    contactId: d.contactId || null,
-    lista: (!d.contactId && d.lista?.trim()) || null,
-    accion: d.accion || null,
-    fecha: d.fecha || null,
-    hora: d.hora || null,
-    prioridad: d.prioridad || 'ninguna',
-    hecha: false,
-    completada: null,
-    creado: ahora(),
-  };
-  db.tasks.push(t);
-  guardarNotaDeTarea(t, d.nota);
-  tocar(t.contactId);
-  guardar();
-  if (f.closest('dialog')) {
-    modal.close();
-    avisar(`Tarea añadida${t.fecha ? ` · ${fmtCuando(t.fecha)}` : ''}`);
-  } else {
-    ui.enfocarTarea = true;
-  }
-  render();
-});
-
-// Añadir tarea rápida (botón del menú o tecla Q). En la ficha de un contacto, la tarea es suya.
-function modalRapido() {
-  const { ruta, id } = rutaActual();
-  const contactId = ruta === 'contacto' && contacto(id) ? id : '';
-  modal.innerHTML = `<div class="td-rapido">${editorTareaHTML({ fecha: hoy(), contactId })}</div>`;
-  activarEditores(modal);
-  activarTareas(modal);
-  modal.showModal();
-  $('[name=titulo]', modal).focus();
-}
 
 function pintarVista() {
   const { ruta, id } = rutaActual();
@@ -636,7 +347,7 @@ function inscribir(s, contactos, inicio = hoy()) {
 }
 
 // Al completar la tarea de un paso se crea la del siguiente; tras el último, la secuencia termina.
-function avanzarSecuencia(t) {
+export function avanzarSecuencia(t) {
   const ins = inscripcion(t.enrollmentId);
   const s = ins && secuencia(ins.sequenceId);
   if (!s || ins.estado !== 'activa' || ins.tareaId !== t.id) return;
@@ -645,7 +356,7 @@ function avanzarSecuencia(t) {
 }
 
 // Deshacer: la tarea vuelve a estar pendiente y se quita la del paso siguiente si aún no se ha hecho.
-function retrocederSecuencia(t) {
+export function retrocederSecuencia(t) {
   const ins = inscripcion(t.enrollmentId);
   if (!ins || ins.estado === 'cancelada') return;
   const sig = t.siguienteId && tarea(t.siguienteId);
@@ -662,17 +373,10 @@ function sacarDeSecuencia(ins) {
   tocar(ins.contactId);
 }
 
-const avisoSecuencia = (t) => {
+export const avisoSecuencia = (t) => {
   const ins = t.enrollmentId && inscripcion(t.enrollmentId);
   return ins && ins.estado === 'activa' && ins.tareaId === t.id ? `\n\nEs el paso actual de la secuencia «${secuencia(ins.sequenceId)?.nombre}»: el contacto saldrá de ella.` : '';
 };
-
-// Borrar a mano la tarea actual de una secuencia saca al contacto de ella (si no, se quedaría atascado).
-function borrarTarea(t) {
-  db.tasks = db.tasks.filter((x) => x.id !== t.id);
-  const ins = t.enrollmentId && inscripcion(t.enrollmentId);
-  if (ins && ins.estado === 'activa' && ins.tareaId === t.id) Object.assign(ins, { estado: 'cancelada', fin: ahora() });
-}
 
 function vistaSecuencias() {
   app.innerHTML = `
@@ -896,352 +600,9 @@ function modalElegirContactos(s) {
   });
 }
 
-const VISTAS_TAREAS = [
-  { id: 'bandeja', label: 'Todas', icono: 'bandeja' },
-  { id: 'hoy', label: 'Hoy', icono: 'calendario' },
-  { id: 'proximo', label: 'Próximo', icono: 'flecha' },
-  { id: 'generales', label: 'Generales', icono: 'lista' },
-  { id: 'completadas', label: 'Completadas', icono: 'check' },
-];
-
-// Vistas propias de Tareas (db.taskViews): una pestaña más con los filtros que se quieran.
-const FILTROS_TAREA_VACIOS = { cuando: '', accion: '', prioridad: '', contacto: '', estado: '', estadoLead: '', ownerId: '', secuencia: '', lista: '', q: '' };
-const CUANDO_TAREA = [
-  { id: '', label: 'Cualquier fecha' },
-  { id: 'vencidas', label: 'Vencidas' },
-  { id: 'hoy', label: 'Hoy y vencidas' },
-  { id: 'solo-hoy', label: 'Solo hoy' },
-  { id: 'manana', label: 'Mañana' },
-  { id: 'semana', label: 'Próximos 7 días' },
-  { id: 'futuras', label: 'A partir de mañana' },
-  { id: 'con-fecha', label: 'Con fecha' },
-  { id: 'sin', label: 'Sin fecha' },
-];
-
-const vistaTareaPropia = (id = ui.tareasVista) => db.taskViews.find((v) => v.id === id);
-
-function cumpleFiltroTarea(t, f) {
-  const h = hoy();
-  const c = contacto(t.contactId);
-  const enRango = {
-    vencidas: t.fecha && t.fecha < h,
-    hoy: t.fecha && t.fecha <= h,
-    'solo-hoy': t.fecha === h,
-    manana: t.fecha === sumarDias(h, 1),
-    semana: t.fecha && t.fecha >= h && t.fecha <= sumarDias(h, 6),
-    futuras: t.fecha && t.fecha > h,
-    'con-fecha': !!t.fecha,
-    sin: !t.fecha,
-  };
-  if (f.cuando && !enRango[f.cuando]) return false;
-  if (f.accion && (f.accion === 'interna' ? t.accion : t.accion !== f.accion)) return false;
-  if (f.prioridad && (t.prioridad || 'ninguna') !== f.prioridad) return false;
-  if (f.contacto && (f.contacto === 'con' ? !c : c)) return false;
-  if (f.estado && c?.estado !== f.estado) return false;
-  if (f.estadoLead && (empresa(c?.companyId)?.estadoLead || '') !== f.estadoLead) return false;
-  if (f.ownerId && (f.ownerId === 'ninguno' ? c?.ownerId : c?.ownerId !== f.ownerId)) return false;
-  if (f.secuencia) {
-    const s = t.enrollmentId && inscripcion(t.enrollmentId)?.sequenceId;
-    if (f.secuencia === 'alguna' ? !s : f.secuencia === 'ninguna' ? s : s !== f.secuencia) return false;
-  }
-  if (f.lista && (c || (t.lista || 'General') !== f.lista)) return false;
-  if (f.q && !coincideTarea(t, f.q.trim().toLowerCase())) return false;
-  return true;
-}
-
-// "Llamadas · Prioridad 1 · Contactos en Negociación…" para recordar qué filtra la vista.
-function resumenFiltrosTarea(f) {
-  const s = (lista, id) => lista.find((x) => x.id === id)?.label;
-  return [
-    f.cuando && s(CUANDO_TAREA, f.cuando),
-    f.accion && (f.accion === 'interna' ? 'Tareas internas' : tipoAccionDe(f.accion).label),
-    f.prioridad && s(PRIORIDADES, f.prioridad),
-    f.contacto && (f.contacto === 'con' ? 'Con contacto' : 'Sin contacto'),
-    f.estado && `Contacto: ${estadoDe(f.estado).label}`,
-    f.estadoLead && `Empresa: ${estadoLeadDe(f.estadoLead)?.label || f.estadoLead}`,
-    f.ownerId && `Propietario: ${f.ownerId === 'ninguno' ? 'sin propietario' : nombreUsuario(f.ownerId)}`,
-    f.secuencia && (f.secuencia === 'alguna' ? 'De una secuencia' : f.secuencia === 'ninguna' ? 'Fuera de secuencias' : `Secuencia «${secuencia(f.secuencia)?.nombre || '?'}»`),
-    f.lista && `Lista #${f.lista}`,
-    f.q && `«${f.q}»`,
-  ].filter(Boolean).map(esc).join(' · ') || 'Sin filtros: todas las tareas pendientes';
-}
-
-function modalVistaTareas(v) {
-  const f = { ...FILTROS_TAREA_VACIOS, ...v?.filtros };
-  const sel = (nombre, label, opcionesHTML) => campo(label, `<select name="${nombre}">${opcionesHTML}</select>`);
-  const op = (id, label, actual) => `<option value="${esc(id)}" ${id === actual ? 'selected' : ''}>${esc(label)}</option>`;
-  abrirModal(v ? 'Editar vista de tareas' : 'Nueva vista de tareas', `
-    ${campo('Nombre de la vista *', `<input name="nombre" required value="${esc(v?.nombre)}" placeholder="Ej. Llamadas a clínicas en negociación">`)}
-    <p class="muted small">Elige solo los filtros que quieras; los que dejes en «todas» no filtran.</p>
-    <div class="row2">
-      ${sel('cuando', 'Fecha', opciones(CUANDO_TAREA, f.cuando))}
-      ${sel('accion', 'Tipo', op('', 'Todos', f.accion) + op('interna', 'Tarea interna', f.accion) + opciones(TIPOS_ACCION, f.accion))}
-      ${sel('prioridad', 'Prioridad', op('', 'Todas', f.prioridad) + opciones(PRIORIDADES, f.prioridad))}
-      ${sel('contacto', 'Contacto', op('', 'Con o sin contacto', f.contacto) + op('con', 'Solo con contacto', f.contacto) + op('sin', 'Solo sin contacto', f.contacto))}
-      ${sel('estado', 'Estado del contacto', op('', 'Todos', f.estado) + opciones(ESTADOS, f.estado))}
-      ${sel('estadoLead', 'Estado lead de la empresa', op('', 'Todos', f.estadoLead) + opciones(ESTADOS_LEAD, f.estadoLead))}
-      ${sel('ownerId', 'Propietario del contacto', op('', 'Todos', f.ownerId) + op('ninguno', 'Sin propietario', f.ownerId) + db.users.map((u) => op(u.id, nombreUsuario(u.id), f.ownerId)).join(''))}
-      ${sel('secuencia', 'Secuencia', op('', 'Todas', f.secuencia) + op('alguna', 'De alguna secuencia', f.secuencia) + op('ninguna', 'De ninguna secuencia', f.secuencia) + db.sequences.map((s) => op(s.id, s.nombre, f.secuencia)).join(''))}
-      ${sel('lista', 'Lista (tareas sin contacto)', op('', 'Todas', f.lista) + ['General', ...listasDeTareas()].map((l) => op(l, `# ${l}`, f.lista)).join(''))}
-      ${campo('Texto', `<input name="q" value="${esc(f.q)}" placeholder="En el título, contacto o empresa">`)}
-    </div>
-  `, (d) => {
-    const nombre = d.nombre.trim();
-    if (!nombre) return false;
-    const filtros = Object.fromEntries(Object.keys(FILTROS_TAREA_VACIOS).map((k) => [k, String(d[k] || '').trim()]));
-    if (v) Object.assign(v, { nombre, filtros });
-    else {
-      const nv = { id: uid(), nombre, filtros, creado: ahora() };
-      db.taskViews.push(nv);
-      ui.tareasVista = nv.id;
-    }
-    guardar();
-    render();
-  });
-  if (v) {
-    botonBorrarModal(() => {
-      if (!confirm(`¿Eliminar la vista «${v.nombre}»? Las tareas no se tocan.`)) return false;
-      db.taskViews = db.taskViews.filter((x) => x.id !== v.id);
-      ui.tareasVista = 'bandeja';
-      guardar();
-      render();
-    });
-  }
-}
-
-function vistaTareas() {
-  const h = hoy();
-  const pend = db.tasks.filter((t) => !t.hecha);
-  const cuenta = {
-    bandeja: pend.length,
-    hoy: pend.filter((t) => t.fecha && t.fecha <= h).length,
-    proximo: pend.filter((t) => t.fecha >= h && t.fecha <= sumarDias(h, 6)).length,
-    generales: pend.filter((t) => !t.contactId).length,
-    completadas: 0,
-  };
-  db.taskViews.forEach((v) => (cuenta[v.id] = pend.filter((t) => cumpleFiltroTarea(t, v.filtros)).length));
-  const propia = vistaTareaPropia();
-  const vista = propia ? { id: propia.id, label: propia.nombre } : VISTAS_TAREAS.find((v) => v.id === ui.tareasVista) || VISTAS_TAREAS[0];
-  ui.tareasVista = vista.id;
-  const tab = (v, label, icono) => `
-    <button class="${v === vista.id ? 'active' : ''}" data-action="vista-tareas" data-vista="${v}">
-      ${ico(icono)}${esc(label)}${cuenta[v] ? ` <small>${cuenta[v]}</small>` : ''}
-    </button>`;
-
-  app.innerHTML = `
-    <div class="td">
-      <div class="td-barra">
-        <nav class="td-vistas">
-          ${VISTAS_TAREAS.map((v) => tab(v.id, v.label, v.icono)).join('')}
-          ${db.taskViews.map((v) => tab(v.id, v.nombre, 'filtro')).join('')}
-          <button class="td-vista-nueva" data-action="nueva-vista-tareas" title="Crear una pestaña con los filtros que quieras">+ Vista</button>
-        </nav>
-        <input type="search" id="t-q" class="td-buscar" placeholder="Buscar tarea o contacto…" value="${esc(ui.tareasQ)}">
-      </div>
-      <div class="td-cabecera">
-        <h1 class="td-h1">${esc(vista.label)}${propia ? ` <button class="icon-btn" data-action="editar-vista-tareas" data-id="${propia.id}" title="Editar filtros de la vista">${ico('editar')}</button>` : ''}</h1>
-        ${vista.id !== 'completadas' && cuenta[vista.id] ? `<button class="btn primary" data-action="empezar-tareas" data-origen="tareas" title="Ir haciendo estas tareas una detrás de otra">${ico('play')} Empezar tareas</button>` : ''}
-      </div>
-      <p class="td-sub muted small">
-        ${vista.id === 'completadas'
-          ? `${db.tasks.filter((t) => t.hecha).length} completadas`
-          : `✓ ${cuenta[vista.id]} ${cuenta[vista.id] === 1 ? 'tarea' : 'tareas'}`}
-        ${vista.id === 'generales' ? '· Tareas que no son de ningún contacto, ordenadas en listas' : ''}
-        ${propia ? `· ${ico('filtro')} ${resumenFiltrosTarea(propia.filtros)}` : ''}
-        <span class="td-atajo">· Pulsa <kbd>Q</kbd> para añadir una tarea</span>
-      </p>
-      <div id="lista-tareas"></div>
-    </div>`;
-
-  $('#t-q').addEventListener('input', (e) => { ui.tareasQ = e.target.value; renderListaTareas(); });
-  renderListaTareas();
-}
-
-// Día (en España) en que se completó una tarea.
-const diaCompletada = (t) => {
-  if (!t.completada) return '';
-  const p = partesEn(ZONA, new Date(t.completada));
-  return `${p.year}-${p.month}-${p.day}`;
-};
-
-function coincideTarea(t, q) {
-  if (!q) return true;
-  const c = contacto(t.contactId);
-  const n = nota(t.noteId);
-  return [t.titulo, t.detalle, c?.nombre, empresaDe(c), n?.titulo].some((v) => (v || '').toLowerCase().includes(q));
-}
-
-function renderListaTareas() {
-  const cont = $('#lista-tareas');
-  const q = ui.tareasQ.trim().toLowerCase();
-  const h = hoy();
-  const tareas = db.tasks.filter((t) => coincideTarea(t, q));
-  const pend = tareas.filter((t) => !t.hecha);
-  const grupos = [];
-
-  if (ui.tareasVista === 'completadas') {
-    const hechas = tareas.filter((t) => t.hecha).sort((a, b) => (b.completada || '').localeCompare(a.completada || ''));
-    [...new Set(hechas.map(diaCompletada))].forEach((d) => grupos.push({
-      clave: 'hecha-' + d, titulo: d ? tituloDia(d) : 'Sin fecha', items: hechas.filter((t) => diaCompletada(t) === d), sinAnadir: true,
-    }));
-    if (!grupos.length) {
-      cont.innerHTML = `<div class="td-vacio"><p>${q ? 'Ninguna tarea completada coincide.' : 'Aún no has completado ninguna tarea.'}</p></div>`;
-      return;
-    }
-  } else if (ui.tareasVista === 'generales') {
-    // Tareas sin contacto, agrupadas por lista ("General" si no tienen).
-    const generales = pend.filter((t) => !t.contactId);
-    const listas = [...new Set([...generales.map((t) => t.lista || ''), ...ui.listasNuevas])]
-      .sort((a, b) => (!a ? -1 : !b ? 1 : a.localeCompare(b, 'es')));
-    if (!listas.includes('')) listas.unshift('');
-    listas.forEach((l) => grupos.push({
-      clave: 'lista-' + l, titulo: `<span class="td-almohadilla">#</span> ${esc(l || 'General')}`, lista: l, fecha: '',
-      items: generales.filter((t) => (t.lista || '') === l).sort(ordenTareas),
-    }));
-  } else if (vistaTareaPropia()) {
-    // Vista propia: solo las que cumplen sus filtros, por días y sin huecos (no se añaden tareas desde aquí,
-    // porque una tarea nueva podría no cumplir los filtros y desaparecer).
-    const items = pend.filter((t) => cumpleFiltroTarea(t, vistaTareaPropia().filtros)).sort(ordenTareas);
-    const vencidas = items.filter((t) => t.fecha && t.fecha < h);
-    if (vencidas.length) grupos.push({ clave: 'vencidas', titulo: 'Vencidas', clase: 'vencidas', items: vencidas, sinAnadir: true });
-    [...new Set(items.filter((t) => t.fecha >= h).map((t) => t.fecha))].forEach((d) => grupos.push({
-      clave: 'dia-' + d, titulo: tituloDia(d), items: items.filter((t) => t.fecha === d), sinAnadir: true,
-    }));
-    const sinFecha = items.filter((t) => !t.fecha);
-    if (sinFecha.length) grupos.push({ clave: 'sin-fecha', titulo: 'Sin fecha', items: sinFecha, sinAnadir: true });
-    if (!grupos.length) {
-      cont.innerHTML = `<div class="td-vacio"><p>Ninguna tarea pendiente cumple los filtros de esta vista.</p></div>`;
-      return;
-    }
-  } else {
-    const vencidas = pend.filter((t) => t.fecha && t.fecha < h).sort(ordenTareas);
-    if (vencidas.length) grupos.push({ clave: 'vencidas', titulo: 'Vencidas', clase: 'vencidas', items: vencidas, sinAnadir: true });
-    let dias;
-    if (ui.tareasVista === 'hoy') dias = [h];
-    else if (ui.tareasVista === 'proximo') dias = Array.from({ length: 7 }, (_, i) => sumarDias(h, i));
-    else dias = [...new Set([h, ...pend.filter((t) => t.fecha > h).map((t) => t.fecha)])].sort();
-    dias.forEach((d) => grupos.push({
-      clave: 'dia-' + d, titulo: tituloDia(d), fecha: d, items: pend.filter((t) => t.fecha === d).sort(ordenTareas),
-    }));
-    if (ui.tareasVista === 'bandeja') {
-      grupos.push({ clave: 'sin-fecha', titulo: 'Sin fecha', fecha: '', items: pend.filter((t) => !t.fecha).sort(ordenTareas) });
-    }
-  }
-
-  cont.innerHTML = grupos.map((g) => `
-    <section class="td-grupo ${g.clase || ''}">
-      <h2 class="td-grupo-titulo">
-        <span>${g.titulo}</span>
-        ${g.items.length ? `<span class="td-grupo-n">${g.items.length}</span>` : ''}
-        ${g.clave === 'vencidas' ? '<button class="td-reprogramar" data-action="reprogramar-vencidas">Reprogramar a hoy</button>' : ''}
-      </h2>
-      <div class="td-lista">${g.items.map((t) => tareaHTML(t)).join('')}</div>
-      ${g.sinAnadir ? '' : ui.editor?.clave === g.clave ? editorTareaHTML({ fecha: g.fecha, lista: g.lista }) : anadirTareaHTML(g.clave, g.fecha)}
-    </section>`).join('') + (ui.tareasVista === 'generales' ? '<button class="td-anadir td-nueva-lista" data-action="nueva-lista"><span class="td-mas">+</span> Nueva lista</button>' : '');
-  activarEditores(cont);
-  activarTareas(cont);
-}
-
-export function tareaHTML(t, mostrarContacto = true) {
-  const c = t.contactId ? contacto(t.contactId) : null;
-  const n = t.noteId ? nota(t.noteId) : null;
-  const p = prioridadDe(t.prioridad);
-  const ta = t.accion && tipoAccionDe(t.accion);
-  const seq = t.enrollmentId && secuencia(inscripcion(t.enrollmentId)?.sequenceId);
-
-  let cuando = '';
-  if (t.fecha) cuando = `<span class="td-fecha ${t.hecha ? '' : claseFecha(t.fecha)}">${ICONO_CAL}${fmtCuando(t.fecha)}${t.hora ? ` ${conLocal(t.hora, t.fecha)}` : ''}</span>`;
-  else if (t.hora) cuando = `<span class="td-fecha">${ico('reloj')} ${conLocal(t.hora)}</span>`;
-
-  // La nota de un contacto se ve en su ficha; la de una tarea sin contacto, al abrir la tarea.
-  let notaLink = '';
-  if (n && n.contactId && !mostrarContacto) notaLink = `<button class="link-btn" data-action="ver-nota" data-id="${n.id}">${ico('nota')} Ver nota</button>`;
-  else if (n && n.contactId) notaLink = `<a href="#/contacto/${n.contactId}">${ico('nota')} Tiene nota</a>`;
-  else if (n) notaLink = `<span title="Ábrela para ver la nota">${ico('nota')} Nota</span>`;
-
-  const meta = [
-    cuando,
-    notaLink,
-    !t.hecha && REUNIONES.includes(t.accion)
-      ? `<button class="td-cancelar-btn" data-action="cancelar-reunion" data-id="${t.id}" title="La reunión no se hizo: queda registrada como cancelada">${ico('cancelado')} Cancelada</button>` : '',
-    seq ? `<a class="seq-pill" href="#/secuencias/${seq.id}" title="Paso ${t.paso + 1} de la secuencia «${esc(seq.nombre)}»">${ico('secuencia')} ${esc(seq.nombre)} · ${t.paso + 1}/${seq.pasos.length}</a>` : '',
-    mostrarContacto && c ? `<a class="td-proyecto" href="#/contacto/${c.id}">${esc(c.nombre)}${empresaDe(c) ? ` · ${esc(empresaDe(c))}` : ''} <span>#</span></a>` : '',
-    !c && t.lista && ui.tareasVista !== 'generales' ? `<span class="td-proyecto">${esc(t.lista)} <span>#</span></span>` : '',
-  ].filter(Boolean).join('');
-  // Desde las listas de tareas, una tarea de un contacto lleva a su ficha (allí se edita).
-  const irAFicha = mostrarContacto && c;
-
-  return `
-    <div class="td-tarea ${t.hecha ? 'hecha' : ''}" data-tarea="${t.id}">
-      <button class="td-check p-${p.id}" data-action="toggle-tarea" data-id="${t.id}"
-        title="${t.hecha ? 'Marcar como pendiente' : 'Completar'}" aria-label="${t.hecha ? 'Marcar como pendiente' : 'Completar tarea'}"></button>
-      <div class="td-cuerpo" data-action="${irAFicha ? 'ir-a-tarea' : 'editar-tarea'}" data-id="${t.id}" title="${irAFicha ? `Abrir la ficha de ${esc(c.nombre)}` : 'Editar tarea'}">
-        <div class="td-titulo">
-          ${ta ? `<span class="td-tipo" title="${ta.label}">${ico(ta.icon)}</span>` : ''}${esc(t.titulo)}
-          ${t.cancelada ? '<span class="td-etq-cancelada">Cancelada</span>' : ''}
-        </div>
-        ${t.detalle ? `<div class="td-desc">${esc(t.detalle)}</div>` : ''}
-        ${meta ? `<div class="td-meta">${meta}</div>` : ''}
-      </div>
-      <div class="td-hover">
-        ${irAFicha ? '' : `<button class="icon-btn" data-action="editar-tarea" data-id="${t.id}" title="Editar">${ico('editar')}</button>`}
-        <button class="icon-btn" data-action="borrar-tarea" data-id="${t.id}" title="Eliminar">${ico('papelera')}</button>
-      </div>
-    </div>`;
-}
-
-// Marca una tarea como hecha/pendiente. Si es una acción planeada (llamar, WhatsApp…) queda registrada en el historial de acciones.
-// Una reunión `cancelada` cuenta como hecha, pero se registra como "Reunión cancelada".
-function marcarTarea(t, hecha, cancelada = false, datosAccion = {}) {
-  t.hecha = hecha;
-  t.completada = hecha ? ahora() : null;
-  if (hecha && cancelada) t.cancelada = true;
-  else delete t.cancelada;
-  if (hecha && t.accion && t.contactId && !db.actions.some((a) => a.taskId === t.id)) {
-    db.actions.push({
-      id: uid(), contactId: t.contactId, tipo: cancelada ? 'reunion-cancelada' : t.accion, fecha: hoy(), hora: null,
-      resumen: t.titulo, noteId: t.noteId || null, taskId: t.id, creado: ahora(), ...datosAccion,
-    });
-  }
-  if (!hecha) db.actions = db.actions.filter((a) => a.taskId !== t.id);
-  if (t.enrollmentId) (hecha ? avanzarSecuencia : retrocederSecuencia)(t);
-  tocar(t.contactId);
-}
-
-// Completa (o cancela) con aviso para deshacer.
-function completarTarea(t, cancelada = false, datosAccion = {}, mensaje = 'Tarea completada') {
-  marcarTarea(t, true, cancelada, datosAccion);
-  guardar();
-  render();
-  avisar(cancelada ? 'Reunión marcada como cancelada' : mensaje, () => {
-    marcarTarea(t, false);
-    guardar();
-    render();
-  });
-}
-
-const tareasParaHoy = () => db.tasks.filter((t) => !t.hecha && t.fecha && t.fecha <= hoy()).sort(ordenTareas);
-
-// Las tareas pendientes que se ven ahora mismo en la página Tareas, en el mismo orden.
-function tareasDeLaVista() {
-  const h = hoy();
-  const q = ui.tareasQ.trim().toLowerCase();
-  const propia = vistaTareaPropia();
-  return db.tasks
-    .filter((t) => !t.hecha && coincideTarea(t, q))
-    .filter((t) => {
-      if (propia) return cumpleFiltroTarea(t, propia.filtros);
-      if (ui.tareasVista === 'hoy') return t.fecha && t.fecha <= h;
-      if (ui.tareasVista === 'proximo') return t.fecha && t.fecha <= sumarDias(h, 6);
-      if (ui.tareasVista === 'generales') return !t.contactId;
-      return true;
-    })
-    .sort(ordenTareas);
-}
-
 // Como la cola de tareas de HubSpot: cada tarea de un contacto se hace desde su ficha completa
 // (con «Tarea 2 de 10» arriba); las tareas sin contacto y el final, en la página #/cola.
-function empezarSecuencia(tareas, origen = 'hoy', i = 0) {
+export function empezarSecuencia(tareas, origen = 'hoy', i = 0) {
   if (!tareas.length) return avisar('No hay tareas pendientes');
   ui.cola = { ids: tareas.map((t) => t.id), i, origen };
   mostrarCola();
@@ -1972,99 +1333,6 @@ function modalImportar() {
   });
 }
 
-// Crea o actualiza la nota asociada a una tarea (la de "Nota"). Si la tarea es de un contacto, la nota se ve también en su ficha.
-function guardarNotaDeTarea(t, contenido) {
-  const texto = (contenido || '').trim();
-  const existente = t.noteId && nota(t.noteId);
-  if (existente) {
-    if (existente.contenido !== texto && texto) Object.assign(existente, { contenido: texto, editado: ahora() });
-    // Nota sin contacto (las antiguas "notas sueltas") de una tarea que ahora tiene contacto: pasa a ser del contacto.
-    const c = !existente.contactId && contacto(t.contactId);
-    if (c) {
-      existente.contactId = c.id;
-      cambiarContacto(c, () => {
-        if (!c.telefono && existente.telefono) c.telefono = existente.telefono;
-        if (!c.email && existente.email) c.email = existente.email;
-      });
-      if (!c.hubspotId && existente.hubspotId) Object.assign(c, { hubspotId: existente.hubspotId, hubspotEstado: existente.hubspotEstado });
-    }
-    return;
-  }
-  if (!texto) return;
-  const n = {
-    id: uid(), contactId: t.contactId, tipo: ACCION_A_NOTA[t.accion] || 'general', titulo: t.titulo,
-    contenido: texto, fecha: hoy(), fijada: false, creado: ahora(),
-  };
-  db.notes.push(n);
-  t.noteId = n.id;
-}
-
-// Editar una tarea, o crear una nueva (`nueva` con contactId/accion por defecto, p. ej. desde "+ Planear").
-/** @param {any} t @param {any} [nueva] */
-export function modalTarea(t, nueva = null) {
-  const creando = !t;
-  const v = t || { titulo: '', detalle: '', contactId: nueva?.contactId || null, accion: nueva?.accion || null, fecha: fechaAtajo('manana'), hora: '', prioridad: 'ninguna', hecha: false };
-  const n = v.noteId && nota(v.noteId);
-  abrirModal(creando ? (v.accion ? 'Planear acción' : 'Nueva tarea') : 'Editar tarea', `
-    ${campo('Tarea *', tituloNlp(v.titulo, v.accion ? 'Ej. Llamar el jueves a las 17 para ver qué le pareció la propuesta' : 'Puedes escribir la fecha: mañana, el lunes, a las 17…'))}
-    <div class="row2">
-      ${campo('Contacto', `<select name="contactId">
-        <option value="">Sin contacto</option>
-        ${contactosOrdenados().map((c) => `<option value="${c.id}" ${c.id === v.contactId ? 'selected' : ''}>${esc(c.nombre)}${empresaDe(c) ? ` · ${esc(empresaDe(c))}` : ''}</option>`).join('')}
-      </select>`)}
-      ${campo('Tipo de acción', `<select name="accion" ${creando ? '' : 'data-manual="1"'}>
-        <option value="">Tarea interna</option>
-        ${opciones(TIPOS_ACCION, v.accion)}
-      </select>`)}
-    </div>
-    <div class="row3">
-      ${campo('Fecha', campoFecha('fecha', v.fecha))}
-      ${campo('Hora (España)', `<input type="time" name="hora" value="${esc(v.hora)}">`)}
-      ${campo('Prioridad', `<select name="prioridad">${opciones(PRIORIDADES, v.prioridad)}</select>`)}
-    </div>
-    <div class="row2">
-      ${campo('Detalle', `<input name="detalle" value="${esc(v.detalle)}" placeholder="Una línea de contexto (opcional)">`)}
-      ${campo('Lista', campoLista(v.lista), `campo-lista ${v.contactId ? 'oculto' : ''}`)}
-    </div>
-    ${n && !n.contactId && (n.titulo || n.telefono) ? `
-      <p class="muted small">${ico('nota')} ${esc(n.titulo)}${n.telefono ? ` · <a href="tel:${esc(n.telefono)}">${ico('telefono')} ${esc(n.telefono)}</a>` : ''}. Al elegirle un contacto, la nota pasa a su ficha.</p>` : ''}
-    <div class="field"><span>${ico('nota')} Nota asociada ${n ? '' : '(opcional)'}</span>${editorHTML('nota', n?.contenido || '', 6, 'Lo importante para esta acción: qué preguntar, qué llevar preparado…')}</div>
-    ${creando ? '' : `<label class="check"><input type="checkbox" name="hecha" ${v.hecha ? 'checked' : ''}> Completada${v.cancelada ? ' (reunión cancelada)' : ''}</label>`}
-  `, (d) => {
-    const titulo = tituloLimpio($('[name=titulo]', modal));
-    if (!titulo) return false;
-    const tt = t || { id: uid(), hecha: false, completada: null, creado: ahora() };
-    const antes = tt.contactId;
-    Object.assign(tt, {
-      titulo,
-      detalle: d.detalle.trim(),
-      contactId: d.contactId || null,
-      lista: (!d.contactId && d.lista?.trim()) || null,
-      accion: d.accion || null,
-      fecha: d.fecha || null,
-      hora: d.hora || null,
-      prioridad: d.prioridad,
-    });
-    if (creando) db.tasks.push(tt);
-    guardarNotaDeTarea(tt, d.nota);
-    if (!creando && d.hecha !== tt.hecha) marcarTarea(tt, d.hecha);
-    tocar(antes);
-    tocar(tt.contactId);
-    guardar();
-    render();
-  });
-  // La lista solo tiene sentido en las tareas sin contacto.
-  $('form', modal).contactId.addEventListener('change', (e) => $('.campo-lista', modal).classList.toggle('oculto', !!e.target.value));
-  if (!creando) {
-    botonBorrarModal(() => {
-      if (!confirm(`¿Eliminar la tarea "${t.titulo}"?${n && n.contactId ? ' Su nota se conserva.' : ''}${avisoSecuencia(t)}`)) return false;
-      borrarTarea(t);
-      guardar();
-      render();
-    });
-  }
-}
-
 // Datos de versiones anteriores: la empresa era un texto en cada contacto y no había propietarios.
 function migrar() {
   let cambios = false;
@@ -2174,9 +1442,6 @@ Object.assign(acciones, {
     guardar();
     render();
   },
-  'vista-tareas': (el) => { ui.tareasVista = el.dataset.vista; ui.editor = null; render(); },
-  'nueva-vista-tareas': () => modalVistaTareas(),
-  'editar-vista-tareas': (el) => modalVistaTareas(vistaTareaPropia(el.dataset.id)),
   'empezar-tareas': (el) => empezarSecuencia(el.dataset.origen === 'tareas' ? tareasDeLaVista() : tareasParaHoy(), el.dataset.origen),
   'sq-salir': () => salirDeCola(),
   'sq-ir': (el) => irEnCola(+el.dataset.i),
@@ -2191,64 +1456,6 @@ Object.assign(acciones, {
     render();
   },
   'sq-reiniciar': () => empezarSecuencia(tareasParaHoy(), 'hoy'),
-  'toggle-tarea': (el) => {
-    const t = tarea(el.dataset.id);
-    const fila = el.closest('.td-tarea');
-    if (t.hecha) {
-      marcarTarea(t, false);
-      guardar();
-      render();
-    } else if (!fila?.classList.contains('completando')) {
-      // Como en Todoist: se ve la marca un momento antes de que la tarea desaparezca.
-      fila?.classList.add('completando');
-      setTimeout(() => completarTarea(t), 280);
-    }
-  },
-  'completar-accion': (el) => completarTarea(tarea(el.dataset.id)),
-  'cancelar-reunion': (el) => completarTarea(tarea(el.dataset.id), true),
-  'abrir-editor': (el) => {
-    ui.editor = { clave: el.dataset.clave };
-    ui.enfocarTarea = true;
-    render();
-  },
-  'reprogramar-vencidas': () => {
-    const h = hoy();
-    const antes = db.tasks.filter((t) => !t.hecha && t.fecha && t.fecha < h).map((t) => [t, t.fecha]);
-    antes.forEach(([t]) => (t.fecha = h));
-    guardar();
-    render();
-    avisar(`${antes.length} tarea${antes.length === 1 ? '' : 's'} movida${antes.length === 1 ? '' : 's'} a hoy`, () => {
-      antes.forEach(([t, f]) => (t.fecha = f));
-      guardar();
-      render();
-    });
-  },
-  'editar-tarea': (el) => modalTarea(tarea(el.dataset.id)),
-  // Desde la lista de Tareas: se abre la ficha del contacto con la tarea arriba («Tarea 2 de 10»),
-  // y desde ahí se puede seguir con las demás tareas de la vista.
-  'ir-a-tarea': (el) => {
-    const t = tarea(el.dataset.id);
-    const lista = tareasDeLaVista();
-    const i = lista.findIndex((x) => x.id === t.id);
-    if (i >= 0) return empezarSecuencia(lista, 'tareas', i);
-    ui.tareaDestacada = t.id; // completada: solo se abre la ficha
-    location.hash = '#/contacto/' + t.contactId;
-  },
-  'nueva-lista': () => abrirModal('Nueva lista', campo('Nombre de la lista *', '<input name="nombre" required placeholder="Ej. Administración, Marketing, Producto…">'), (d) => {
-    const nombre = d.nombre.trim().replace(/^#\s*/, '');
-    if (!nombre) return false;
-    ui.listasNuevas.add(nombre);
-    ui.editor = { clave: 'lista-' + nombre };
-    ui.enfocarTarea = true;
-    render();
-  }),
-  'borrar-tarea': (el) => {
-    const t = tarea(el.dataset.id);
-    if (!confirm(`¿Eliminar la tarea "${t.titulo}"?${avisoSecuencia(t)}`)) return;
-    borrarTarea(t);
-    guardar();
-    render();
-  },
   // Importar CSV y propiedades de empresa
   'importar-csv': () => modalImportar(),
   'ver-importacion': (el) => {
