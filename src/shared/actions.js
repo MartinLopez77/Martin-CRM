@@ -2,8 +2,19 @@
 // Cada feature añade las suyas con Object.assign(acciones, { ... }).
 import { app } from './ui/dom.js';
 
-/** @type {Record<string, (el: HTMLElement, e: MouseEvent) => unknown>} */
+/** @typedef {(el: HTMLElement, e: MouseEvent) => unknown} Accion */
+
+/** @type {Record<string, Accion>} */
 export const acciones = {};
+
+/**
+ * Añade las acciones de una feature. Cada nombre solo puede estar una vez.
+ * @param {Record<string, Accion>} nuevas
+ */
+export function registrarAcciones(nuevas) {
+  for (const nombre of Object.keys(nuevas)) if (nombre in acciones) throw new Error(`Acción repetida: ${nombre}`);
+  Object.assign(acciones, nuevas);
+}
 
 app.addEventListener('click', (e) => {
   const objetivo = /** @type {Element} */ (e.target);

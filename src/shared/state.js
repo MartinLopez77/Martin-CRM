@@ -1,15 +1,15 @@
 // Estado del CRM: los datos (db, lo que se guarda en data.json) y el estado de la interfaz (ui, no se guarda).
 
 /**
- * Los datos guardados. Cada colección se tipará con el schema de su feature al migrarla.
+ * Los datos guardados. Cada colección tiene el tipo de su feature (las que siguen en any, aún sin migrar).
  * @typedef {Object} BaseDatos
- * @property {any[]} contacts
+ * @property {import('../features/contacts/schema.js').Contacto[]} contacts
  * @property {any[]} notes
  * @property {any[]} tasks
  * @property {any[]} actions
  * @property {any[]} companies
  * @property {any[]} users
- * @property {any[]} views
+ * @property {import('../features/contacts/schema.js').VistaContactos[]} views
  * @property {any[]} taskViews
  * @property {any[]} imports
  * @property {any[]} sequences
@@ -30,10 +30,9 @@ export function setDb(datos) {
 // Estado de la interfaz: qué vista, filtros, editores o ventanas están abiertos.
 export const ui = {
   vistaId: (() => { try { return localStorage.getItem('crm-vista') || 'todos'; } catch { return 'todos'; } })(),
-  /** @type {any} filtros de la tabla de contactos (se cargan de la vista) */
-  filtros: null,
-  /** @type {any} */
-  orden: null,
+  /** filtros de la tabla de contactos (null hasta que se carga la primera vista) */
+  filtros: /** @type {import('../features/contacts/schema.js').FiltrosContactos} */ (/** @type {unknown} */ (null)),
+  orden: /** @type {import('../features/contacts/schema.js').Orden} */ (/** @type {unknown} */ (null)),
   /** @type {Set<string>} contactos marcados en la tabla */
   seleccion: new Set(),
   empresasQ: '',
