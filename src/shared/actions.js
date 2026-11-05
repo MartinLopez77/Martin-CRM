@@ -6,7 +6,7 @@ import { app } from './ui/dom.js';
 /** @typedef {(el: ElementoAccion, e: MouseEvent) => unknown} Accion */
 
 /** @type {Record<string, Accion>} */
-export const acciones = {};
+const acciones = {};
 
 /**
  * Añade las acciones de una feature. Cada nombre solo puede estar una vez.

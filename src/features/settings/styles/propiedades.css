@@ -1,0 +1,7 @@
+/* Ajustes: lista de propiedades e importaciones */
+.props-lista { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; }
+.prop-fila { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--border); min-height: 40px; }
+.prop-fila:last-child { border-bottom: 0; }
+.prop-fila .link-btn { margin: 0; }
+.prop-hueco { width: 58px; }
+.ajustes .row.between h3 { margin: 0; }

@@ -1,0 +1,45 @@
+/* ---------- Ficha: pestañas de la columna central ---------- */
+
+.ficha-tabs { margin-bottom: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.ficha-tabs .vista-tab { display: inline-flex; align-items: center; gap: 5px; padding: 8px 9px; }
+.ficha-tabs .count { font-weight: 600; }
+.etq-borrador {
+  font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--td-manana); background: color-mix(in srgb, var(--td-manana) 12%, transparent);
+  border-radius: 4px; padding: 0 5px;
+}
+#ficha-panel { display: flex; flex-direction: column; gap: 12px; }
+.td-ficha .td-lista:empty { display: none; }
+.aviso-borrador {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--td-manana) 9%, var(--surface)); border: 1px dashed color-mix(in srgb, var(--td-manana) 40%, transparent);
+}
+.aviso-borrador .ico { color: var(--td-manana); margin-top: 2px; }
+
+/* Borrador de WhatsApp: conversación en forma de chat */
+.chat { overflow: hidden; display: flex; flex-direction: column; }
+.chat-cabecera { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.chat-cuerpo {
+  display: flex; flex-direction: column; gap: 8px; padding: 16px 14px;
+  min-height: 180px; max-height: 420px; overflow-y: auto; background: #efeae2;
+}
+.chat-vacio { margin: auto; text-align: center; }
+.burbuja {
+  max-width: 78%; padding: 6px 10px 4px; border-radius: 10px;
+  background: var(--surface); box-shadow: 0 1px 1px rgba(0, 0, 0, .08);
+  white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13.5px;
+}
+.burbuja.mia { align-self: flex-end; background: #d9fdd3; border-top-right-radius: 2px; }
+.burbuja time { display: block; text-align: right; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chat-escribir { display: flex; gap: 8px; align-items: flex-end; padding: 10px; border-top: 1px solid var(--border); }
+.chat-escribir textarea { flex: 1; resize: none; }
+
+/* Borrador de correo */
+.correo-escribir { display: flex; flex-direction: column; gap: 8px; }
+.correo-fila { font-size: 13px; display: flex; gap: 8px; }
+.correo-lista { display: flex; flex-direction: column; }
+.correo-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.correo-item:last-child { border-bottom: 0; }
+.correo-item:hover { background: var(--surface-2); }
+.correo-lista > .chat-vacio { padding: 20px; }

@@ -6,7 +6,7 @@ import { pendientesDe, proximaTarea } from '../tasks/store.js';
 import { inscripcionActiva } from '../sequences/store.js';
 import { nombreUsuario } from '../team/store.js';
 import { horaActual, hoy } from '../../shared/lib/dates.js';
-import { ahora, uid } from '../../shared/lib/text.js';
+import { ahora, esc, uid } from '../../shared/lib/text.js';
 import { db, ui } from '../../shared/state.js';
 
 /** @typedef {import('./schema.js').Contacto} Contacto */
@@ -123,6 +123,28 @@ function claveOrden(c, campo) {
 export function ordenarContactos(lista, { campo, dir }) {
   const claves = new Map(lista.map((c) => [c.id, claveOrden(c, campo)]));
   return lista.sort((a, b) => /** @type {string} */ (claves.get(a.id)).localeCompare(/** @type {string} */ (claves.get(b.id)), 'es') * (dir === 'desc' ? -1 : 1));
+}
+
+/**
+ * Las <option> para elegir contacto («Sin contacto» y todos, con su empresa).
+ * @param {string | null | undefined} sel
+ */
+export const opcionesContactos = (sel) => `
+            <option value="">Sin contacto</option>
+            ${contactosOrdenados().map((x) => `<option value="${x.id}" ${x.id === sel ? 'selected' : ''}>${esc(x.nombre)}${empresaDe(x) ? ` · ${esc(empresaDe(x))}` : ''}</option>`).join('')}`;
+
+/**
+ * Borra contactos con todo lo suyo: notas, tareas, acciones e inscripciones en secuencias.
+ * @param {Iterable<string>} ids
+ */
+export function borrarContactos(ids) {
+  /** @type {Set<string | null | undefined>} */
+  const quitar = new Set(ids);
+  db.contacts = db.contacts.filter((c) => !quitar.has(c.id));
+  db.notes = db.notes.filter((n) => !quitar.has(n.contactId));
+  db.tasks = db.tasks.filter((t) => !quitar.has(t.contactId));
+  db.actions = db.actions.filter((a) => !quitar.has(a.contactId));
+  db.enrollments = db.enrollments.filter((e) => !quitar.has(e.contactId));
 }
 
 /** Los contactos marcados en la tabla. */

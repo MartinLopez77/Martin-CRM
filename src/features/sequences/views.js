@@ -8,7 +8,7 @@ import { inscribir, inscripcionActiva, secuencia, secuenciaExistente, textoEsper
 import { PRIORIDADES } from '../tasks/schema.js';
 import { tarea } from '../tasks/store.js';
 import { fmtRelativa, hoy } from '../../shared/lib/dates.js';
-import { ahora, esc, uid } from '../../shared/lib/text.js';
+import { ahora, esc, plural, uid } from '../../shared/lib/text.js';
 import { guardar } from '../../shared/persistence.js';
 import { render } from '../../shared/router.js';
 import { db } from '../../shared/state.js';
@@ -40,7 +40,7 @@ export function vistaSecuencias() {
               return `
                 <tr data-action="abrir-secuencia" data-id="${s.id}">
                   <td><strong>${esc(s.nombre)}</strong>${s.descripcion ? `<div class="muted small">${esc(s.descripcion)}</div>` : ''}</td>
-                  <td class="small">${s.pasos.length} paso${s.pasos.length === 1 ? '' : 's'}${s.pasos.length ? ` <span class="muted">· ${dias + 1} día${dias ? 's' : ''}</span>` : ''}</td>
+                  <td class="small">${s.pasos.length} paso${plural(s.pasos.length)}${s.pasos.length ? ` <span class="muted">· ${dias + 1} día${dias ? 's' : ''}</span>` : ''}</td>
                   <td>${n('activa')}</td>
                   <td>${n('terminada')}</td>
                   <td class="muted">${n('cancelada')}</td>
@@ -111,7 +111,7 @@ export function vistaSecuenciaDetalle(id) {
       </section>
 
       <section>
-        <div class="col-titulo"><h2>Inscritos <span class="count">${activos} activo${activos === 1 ? '' : 's'}</span></h2></div>
+        <div class="col-titulo"><h2>Inscritos <span class="count">${activos} activo${plural(activos)}</span></h2></div>
         ${ins.length ? `
           <div class="card table-wrap">
             <table class="tabla">
@@ -204,7 +204,7 @@ export function modalInscribir(contactos, alTerminar = () => {}) {
   const yaEn = contactos.filter((c) => inscripcionActiva(c.id)).length;
   const titulo = contactos.length === 1 ? `Inscribir a ${contactos[0].nombre}` : `Inscribir ${contactos.length} contactos`;
   abrirModal(titulo, `
-    ${campo('Secuencia', `<select name="sequenceId">${conPasos.map((s) => `<option value="${s.id}">${esc(s.nombre)} · ${s.pasos.length} paso${s.pasos.length === 1 ? '' : 's'}</option>`).join('')}</select>`)}
+    ${campo('Secuencia', `<select name="sequenceId">${conPasos.map((s) => `<option value="${s.id}">${esc(s.nombre)} · ${s.pasos.length} paso${plural(s.pasos.length)}</option>`).join('')}</select>`)}
     ${campo('Empezar', campoFecha('inicio', hoy()))}
     ${yaEn ? `<p class="muted small">${yaEn === contactos.length && yaEn === 1 ? 'Ya está' : `${yaEn} ya está${yaEn === 1 ? '' : 'n'}`} en una secuencia activa: no se inscribirá${yaEn === 1 ? '' : 'n'} otra vez.</p>` : ''}
   `, (d) => {

@@ -6,6 +6,7 @@ import { registrarAcciones } from '../../shared/actions.js';
 import { guardar } from '../../shared/persistence.js';
 import { render } from '../../shared/router.js';
 import { db } from '../../shared/state.js';
+import { plural } from '../../shared/lib/text.js';
 
 registrarAcciones({
   // Secuencias
@@ -15,7 +16,7 @@ registrarAcciones({
   'borrar-secuencia': (el) => {
     const s = secuenciaExistente(el.dataset.id);
     const activas = db.enrollments.filter((e) => e.sequenceId === s.id && e.estado === 'activa');
-    if (!confirm(`¿Eliminar la secuencia «${s.nombre}»?${activas.length ? `\n\nSe sacará a ${activas.length} contacto${activas.length === 1 ? '' : 's'} y se borrará su tarea pendiente de la secuencia.` : ''}`)) return;
+    if (!confirm(`¿Eliminar la secuencia «${s.nombre}»?${activas.length ? `\n\nSe sacará a ${activas.length} contacto${plural(activas.length)} y se borrará su tarea pendiente de la secuencia.` : ''}`)) return;
     activas.forEach(sacarDeSecuencia);
     db.enrollments = db.enrollments.filter((e) => e.sequenceId !== s.id);
     db.tasks.forEach((t) => { if (t.enrollmentId && !inscripcion(t.enrollmentId)) { delete t.enrollmentId; delete t.paso; delete t.siguienteId; } });

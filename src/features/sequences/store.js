@@ -4,7 +4,7 @@ import { empresaDe } from '../companies/store.js';
 import { contactoExistente, tocar } from '../contacts/store.js';
 import { tarea } from '../tasks/store.js';
 import { hoy, sumarDias } from '../../shared/lib/dates.js';
-import { ahora, uid } from '../../shared/lib/text.js';
+import { ahora, plural, uid } from '../../shared/lib/text.js';
 import { db } from '../../shared/state.js';
 import { avisar } from '../../shared/ui/toast.js';
 
@@ -38,7 +38,7 @@ export function inscripcionExistente(id) {
 /** "2 días después del paso anterior". @param {import('./schema.js').Paso} p @param {number} i */
 export const textoEspera = (p, i) => {
   const dias = +p.espera || 0;
-  const n = `${dias} día${dias === 1 ? '' : 's'}`;
+  const n = `${dias} día${plural(dias)}`;
   if (i === 0) return dias ? `${n} después de inscribir` : 'Al inscribir';
   return dias ? `${n} después del paso anterior` : 'Justo después del paso anterior';
 };
@@ -88,7 +88,7 @@ export function inscribir(s, contactos, inicio = hoy()) {
   });
   const n = libres.length;
   const saltados = contactos.length - n;
-  avisar(`${n} contacto${n === 1 ? '' : 's'} inscrito${n === 1 ? '' : 's'} en «${s.nombre}»${saltados ? ` · ${saltados} ya estaba${saltados === 1 ? '' : 'n'} en una secuencia` : ''}`);
+  avisar(`${n} contacto${plural(n)} inscrito${plural(n)} en «${s.nombre}»${saltados ? ` · ${saltados} ya estaba${saltados === 1 ? '' : 'n'} en una secuencia` : ''}`);
 }
 
 // Al completar la tarea de un paso se crea la del siguiente; tras el último, la secuencia termina.

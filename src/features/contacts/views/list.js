@@ -13,12 +13,12 @@ import { nombresImportaciones } from '../../import/store.js';
 import { conLocal } from '../../settings/horas.js';
 import { avatarUsuario, nombreUsuario, usuario } from '../../team/store.js';
 import { fmtFecha, fmtRelativa, hoy } from '../../../shared/lib/dates.js';
-import { ahora, esc, iniciales, uid } from '../../../shared/lib/text.js';
+import { ahora, esc, iniciales, plural, uid } from '../../../shared/lib/text.js';
 import { guardar } from '../../../shared/persistence.js';
 import { render } from '../../../shared/router.js';
 import { db, ui } from '../../../shared/state.js';
 import { $, app } from '../../../shared/ui/dom.js';
-import { campo, opciones } from '../../../shared/ui/html.js';
+import { campo, opcion, opciones } from '../../../shared/ui/html.js';
 import { ico } from '../../../shared/ui/icons.js';
 import { abrirModal } from '../../../shared/ui/modal.js';
 import { avisar } from '../../../shared/ui/toast.js';
@@ -51,8 +51,6 @@ export function vistaContactos() {
   /** @param {string} id @param {string} valor @param {string} opcionesHTML @param {string} titulo */
   const sel = (id, valor, opcionesHTML, titulo) =>
     `<select id="${id}" class="filtro ${valor ? 'on' : ''}" title="${titulo}">${opcionesHTML}</select>`;
-  /** @param {string} v @param {string} label @param {string} actual */
-  const opt = (v, label, actual) => `<option value="${esc(v)}" ${v === actual ? 'selected' : ''}>${esc(label)}</option>`;
   const importaciones = nombresImportaciones();
 
   app.innerHTML = `
@@ -72,17 +70,17 @@ export function vistaContactos() {
 
     <div class="toolbar filtros-bar">
       <input type="search" id="f-q" class="grow" placeholder="Buscar por nombre, empresa, email, teléfono o ciudad…" value="${esc(f.q)}">
-      ${sel('f-owner', f.ownerId, opt('', 'Propietario: todos', f.ownerId) + opt('ninguno', 'Sin propietario', f.ownerId)
-        + db.users.map((u) => opt(u.id, nombreUsuario(u.id), f.ownerId)).join(''), 'Propietario')}
-      ${sel('f-estado', f.estado, opt('', 'Estado: todos', f.estado) + ESTADOS.map((e) => opt(e.id, e.label, f.estado)).join(''), 'Estado')}
-      ${sel('f-empresa', f.companyId, opt('', 'Empresa: todas', f.companyId) + opt('ninguna', 'Sin empresa', f.companyId)
-        + empresasOrdenadas().map((e) => opt(e.id, e.nombre, f.companyId)).join(''), 'Empresa')}
-      ${sel('f-tarea', f.tarea, opt('', 'Tareas: todas', f.tarea) + opt('vencida', 'Con tareas vencidas', f.tarea)
-        + opt('hoy', 'Con tareas para hoy', f.tarea) + opt('sin', 'Sin tareas pendientes', f.tarea), 'Tareas pendientes')}
-      ${sel('f-secuencia', f.secuencia, opt('', 'Secuencia: todas', f.secuencia) + opt('alguna', 'En alguna secuencia', f.secuencia)
-        + opt('ninguna', 'En ninguna secuencia', f.secuencia) + db.sequences.map((s) => opt(s.id, `En «${s.nombre}»`, f.secuencia)).join(''), 'Secuencia')}
-      ${importaciones.length ? sel('f-importacion', f.importacion, opt('', 'Importación: todas', f.importacion)
-        + importaciones.map((n) => opt(n, n, f.importacion)).join(''), 'Importación en la que entró el contacto') : ''}
+      ${sel('f-owner', f.ownerId, opcion('', 'Propietario: todos', f.ownerId) + opcion('ninguno', 'Sin propietario', f.ownerId)
+        + db.users.map((u) => opcion(u.id, nombreUsuario(u.id), f.ownerId)).join(''), 'Propietario')}
+      ${sel('f-estado', f.estado, opcion('', 'Estado: todos', f.estado) + ESTADOS.map((e) => opcion(e.id, e.label, f.estado)).join(''), 'Estado')}
+      ${sel('f-empresa', f.companyId, opcion('', 'Empresa: todas', f.companyId) + opcion('ninguna', 'Sin empresa', f.companyId)
+        + empresasOrdenadas().map((e) => opcion(e.id, e.nombre, f.companyId)).join(''), 'Empresa')}
+      ${sel('f-tarea', f.tarea, opcion('', 'Tareas: todas', f.tarea) + opcion('vencida', 'Con tareas vencidas', f.tarea)
+        + opcion('hoy', 'Con tareas para hoy', f.tarea) + opcion('sin', 'Sin tareas pendientes', f.tarea), 'Tareas pendientes')}
+      ${sel('f-secuencia', f.secuencia, opcion('', 'Secuencia: todas', f.secuencia) + opcion('alguna', 'En alguna secuencia', f.secuencia)
+        + opcion('ninguna', 'En ninguna secuencia', f.secuencia) + db.sequences.map((s) => opcion(s.id, `En «${s.nombre}»`, f.secuencia)).join(''), 'Secuencia')}
+      ${importaciones.length ? sel('f-importacion', f.importacion, opcion('', 'Importación: todas', f.importacion)
+        + importaciones.map((n) => opcion(n, n, f.importacion)).join(''), 'Importación en la que entró el contacto') : ''}
     </div>
 
     <div id="tabla-contactos"></div>`;
@@ -117,7 +115,7 @@ export function renderTablaContactos() {
 
   const barra = nSel ? `
     <div class="tabla-barra seleccion">
-      <b>${nSel} seleccionado${nSel === 1 ? '' : 's'}</b>
+      <b>${nSel} seleccionado${plural(nSel)}</b>
       <button class="btn sm" data-action="masivo-propietario">${ico('persona')} Asignar propietario</button>
       <button class="btn sm" data-action="masivo-secuencia">${ico('secuencia')} Inscribir en secuencia</button>
       <button class="btn sm" data-action="masivo-estado">Cambiar estado</button>
@@ -126,7 +124,7 @@ export function renderTablaContactos() {
       <button class="link-btn" data-action="quitar-seleccion">Quitar selección</button>
     </div>` : `
     <div class="tabla-barra">
-      <span class="muted">${lista.length} contacto${lista.length === 1 ? '' : 's'}</span>
+      <span class="muted">${lista.length} contacto${plural(lista.length)}</span>
       <span class="grow"></span>
       ${modificada ? `
         <button class="link-btn" data-action="restablecer-vista">Descartar cambios</button>
@@ -230,7 +228,7 @@ export function modalVista(v, conFiltros = false) {
  */
 export function modalMasivo(titulo, campoHTML, aplicar) {
   const lista = seleccionados();
-  abrirModal(`${titulo} · ${lista.length} contacto${lista.length === 1 ? '' : 's'}`, campoHTML, (d) => {
+  abrirModal(`${titulo} · ${lista.length} contacto${plural(lista.length)}`, campoHTML, (d) => {
     lista.forEach((c) => {
       cambiarContacto(c, () => aplicar(c, d));
       c.actualizado = ahora();
@@ -238,6 +236,6 @@ export function modalMasivo(titulo, campoHTML, aplicar) {
     ui.seleccion.clear();
     guardar();
     render();
-    avisar(`${lista.length} contacto${lista.length === 1 ? '' : 's'} actualizado${lista.length === 1 ? '' : 's'}`);
+    avisar(`${lista.length} contacto${plural(lista.length)} actualizado${plural(lista.length)}`);
   });
 }

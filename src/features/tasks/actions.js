@@ -12,6 +12,7 @@ import { db, ui } from '../../shared/state.js';
 import { campo } from '../../shared/ui/html.js';
 import { abrirModal } from '../../shared/ui/modal.js';
 import { avisar } from '../../shared/ui/toast.js';
+import { plural } from '../../shared/lib/text.js';
 
 registrarAcciones({
   'vista-tareas': (el) => { ui.tareasVista = el.dataset.vista; ui.editor = null; render(); },
@@ -44,7 +45,7 @@ registrarAcciones({
     antes.forEach(([t]) => (t.fecha = h));
     guardar();
     render();
-    avisar(`${antes.length} tarea${antes.length === 1 ? '' : 's'} movida${antes.length === 1 ? '' : 's'} a hoy`, () => {
+    avisar(`${antes.length} tarea${plural(antes.length)} movida${plural(antes.length)} a hoy`, () => {
       antes.forEach(([t, f]) => (t.fecha = f));
       guardar();
       render();

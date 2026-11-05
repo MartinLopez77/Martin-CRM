@@ -19,13 +19,15 @@ import { inscripcionActiva, secuencia } from '../../sequences/store.js';
 import { opcionesUsuarios } from '../../team/store.js';
 import { textoProp } from '../../../shared/schema.js';
 import { fmtFecha, horaActual, hoy } from '../../../shared/lib/dates.js';
-import { ahora, esc, iniciales, uid } from '../../../shared/lib/text.js';
+import { ahora, esc, iniciales, plural, uid } from '../../../shared/lib/text.js';
 import { guardar } from '../../../shared/persistence.js';
 import { render, rutaActual } from '../../../shared/router.js';
 import { db, ui } from '../../../shared/state.js';
 import { $, app } from '../../../shared/ui/dom.js';
 import { ico } from '../../../shared/ui/icons.js';
 import { avisar } from '../../../shared/ui/toast.js';
+import { dato } from '../../../shared/ui/html.js';
+import { enlaceWeb } from '../../../shared/ui/links.js';
 
 /** @typedef {import('../schema.js').Contacto} Contacto */
 
@@ -60,12 +62,9 @@ export function vistaContacto(id) {
   const emp = empresa(c.companyId);
   const pLead = propEmpresa('estadoLead');
 
-  /** @param {string} label @param {string} valor HTML */
-  const dato = (label, valor) => (valor ? `<dt>${label}</dt><dd>${valor}</dd>` : '');
-  const web = c.web ? (/^https?:\/\//.test(c.web) ? c.web : `https://${c.web}`) : '';
   const masDatos = [
     dato('Cargo', esc(c.cargo)),
-    dato('Web', web ? `<a href="${esc(web)}" target="_blank" rel="noopener">${esc(/** @type {string} */ (c.web).replace(/^https?:\/\//, ''))}</a>` : ''),
+    dato('Web', c.web ? enlaceWeb(c.web) : ''),
     dato('Ciudad', esc(c.ciudad)),
     dato('Origen', esc(c.origen)),
     dato('Etiquetas', (c.etiquetas || []).map((e) => `<span class="tag">${esc(e)}</span>`).join(' ')),
@@ -231,7 +230,7 @@ function panelTareasFicha(c) {
       ${ui.editor?.clave === 'contacto' ? editorTareaHTML({ contactId: c.id, fijo: true }) : anadirTareaHTML('contacto', hoy())}
       ${hechas.length ? `
         <details class="hechas">
-          <summary>${hechas.length} completada${hechas.length === 1 ? '' : 's'}</summary>
+          <summary>${hechas.length} completada${plural(hechas.length)}</summary>
           <div class="td-lista">${hechas.map((t) => tareaHTML(t, false)).join('')}</div>
         </details>` : ''}
     </section>`;

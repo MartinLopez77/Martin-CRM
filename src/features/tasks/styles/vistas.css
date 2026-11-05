@@ -1,0 +1,9 @@
+/* Tareas: vistas propias */
+.td-vista-nueva {
+  font: inherit; font-weight: 500; color: var(--td-accion);
+  border: 1px dashed color-mix(in srgb, var(--td-accion) 45%, transparent); background: transparent; border-radius: 6px;
+  padding: 4px 10px; cursor: pointer;
+}
+.td-vista-nueva:hover { background: color-mix(in srgb, var(--td-accion) 8%, transparent); }
+.td-h1 { display: flex; align-items: center; gap: 6px; }
+.td-sub .ico { width: 12px; height: 12px; }

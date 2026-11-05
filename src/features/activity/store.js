@@ -2,7 +2,7 @@
 import { db } from '../../shared/state.js';
 
 /** @param {string | null | undefined} id */
-export const accion = (id) => db.actions.find((a) => a.id === id);
+const accion = (id) => db.actions.find((a) => a.id === id);
 
 /**
  * La acción `id`, que tiene que existir (si no, es un error del programa).

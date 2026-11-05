@@ -15,6 +15,9 @@ export const ahora = () => new Date().toISOString();
 /** @param {number | string} n */
 export const pad = (n) => String(n).padStart(2, '0');
 
+/** La 's' del plural: `${n} contacto${plural(n)}`. @param {number} n */
+export const plural = (n) => (n === 1 ? '' : 's');
+
 /** @param {string} s */
 export const mayuscula = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 

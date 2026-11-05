@@ -1,6 +1,6 @@
 // Equipo: la página #/equipo y el formulario de cada persona.
 import { YO } from './store.js';
-import { ahora, esc, iniciales, uid } from '../../shared/lib/text.js';
+import { ahora, esc, iniciales, plural, uid } from '../../shared/lib/text.js';
 import { guardar } from '../../shared/persistence.js';
 import { render } from '../../shared/router.js';
 import { db } from '../../shared/state.js';
@@ -29,7 +29,7 @@ export function vistaEquipo() {
                 <strong>${esc(u.nombre)}</strong>${u.id === YO ? ' <span class="muted small">(tú)</span>' : ''}
                 <div class="muted small">${esc(u.email) || 'Sin email'}</div>
               </div>
-              <button class="link-btn small" data-action="ver-contactos-de" data-id="${u.id}">${n} contacto${n === 1 ? '' : 's'}</button>
+              <button class="link-btn small" data-action="ver-contactos-de" data-id="${u.id}">${n} contacto${plural(n)}</button>
               <button class="icon-btn" data-action="editar-usuario" data-id="${u.id}" title="Editar">${ico('editar')}</button>
             </div>`;
         }).join('')}

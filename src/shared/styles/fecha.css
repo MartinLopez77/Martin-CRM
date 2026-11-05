@@ -1,0 +1,11 @@
+/* Fecha con atajos */
+.fecha-campo { display: inline-flex; align-items: stretch; min-width: 0; }
+.fecha-campo input[type="date"] { border-top-right-radius: 0; border-bottom-right-radius: 0; min-width: 0; flex: 1; }
+.fecha-atajos {
+  width: 34px; padding: 0 6px; margin-left: -1px; cursor: pointer;
+  border-top-left-radius: 0; border-bottom-left-radius: 0;
+  background: var(--surface-2); color: var(--text);
+}
+.field .fecha-campo { display: flex; }
+
+.futura-pill { --c: var(--muted); border-style: dashed; color: var(--muted); max-width: 240px; overflow: hidden; text-overflow: ellipsis; }

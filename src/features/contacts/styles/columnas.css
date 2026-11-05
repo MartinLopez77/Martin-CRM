@@ -1,0 +1,34 @@
+/* ---------- Ficha: tareas · notas · acciones ---------- */
+
+.ficha-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 320px;
+  grid-template-areas: "izq notas acciones";
+  gap: 18px;
+  align-items: start;
+}
+.col-izq { grid-area: izq; display: flex; flex-direction: column; gap: 18px; }
+.col-notas { grid-area: notas; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.col-acciones { grid-area: acciones; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 76px; }
+.col-titulo { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
+.col-titulo h2 { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+
+.notas-filtros { display: flex; flex-direction: column; gap: 8px; }
+.notas-filtros .chips { margin-bottom: 0; }
+
+.registrar-accion {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 8px; background: var(--surface-2);
+}
+.registrar-accion > span { font-weight: 500; }
+
+.accion-pill {
+  font-size: 11.5px; font-weight: 600; color: var(--c);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  padding: 0 8px; border-radius: 999px; white-space: nowrap;
+}
+
+.nota h4.clicable { cursor: pointer; }
+.nota h4.clicable:hover { color: var(--accent); }
+.nota.destacada { outline: 2px solid var(--accent); outline-offset: 2px; transition: outline-color .3s; }
+.ver-mas { margin-top: 6px; }

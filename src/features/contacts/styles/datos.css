@@ -1,0 +1,10 @@
+/* Datos plegables */
+.datos-card > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.datos-card > summary::-webkit-details-marker { display: none; }
+.datos-card > summary h3 { margin: 0; }
+.datos-card > summary h3::before { content: "▸"; display: inline-block; width: 14px; color: var(--muted); transition: transform .15s; }
+.datos-card[open] > summary h3::before { transform: rotate(90deg); }
+.datos-card[open] > summary { margin-bottom: 12px; }

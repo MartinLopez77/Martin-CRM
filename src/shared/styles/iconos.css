@@ -1,0 +1,25 @@
+/* ---------- Iconos propios: mismo trazo y mismo color en todo el CRM ---------- */
+
+.ico {
+  width: 1.1em; height: 1.1em; flex-shrink: 0; vertical-align: -.2em;
+  fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round;
+  color: var(--accent);
+}
+.btn.primary .ico, .td-primario .ico, .topbar .ico, .aviso .ico { color: inherit; }
+.icon-btn { display: inline-grid; place-items: center; }
+.icon-btn .ico { width: 15px; height: 15px; }
+.menu-icono { display: inline-grid; place-items: center; }
+.menu-icono .ico { width: 17px; height: 17px; }
+.td-pop-icono .ico { width: 15px; height: 15px; }
+.td-meta .ico { width: 13px; height: 13px; }
+
+/* Tipos de nota y acción sin colores: todo en el mismo azul */
+.nota { border-left: 3px solid var(--accent-soft); }
+.nota.fijada { background: var(--surface); border-left-color: var(--accent); }
+.tipo-pill { color: var(--text); background: var(--surface-2); display: inline-flex; align-items: center; gap: 5px; }
+.accion-pill { color: var(--muted); border-color: var(--border); display: inline-flex; align-items: center; gap: 4px; }
+.tl-punto { background: var(--accent-soft); border: 0; }
+.tl-punto .ico { width: 15px; height: 15px; }
+.tl-item.futura .tl-punto { filter: none; opacity: 1; background: var(--surface); border: 1px dashed var(--border); }
+.chip:hover { border-color: var(--accent); }
+.sq-fin-icono .ico { width: 44px; height: 44px; color: var(--ok); }

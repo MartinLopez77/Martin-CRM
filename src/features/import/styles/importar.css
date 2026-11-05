@@ -1,0 +1,8 @@
+/* Importar CSV */
+.imp-tabla { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; max-height: 300px; overflow-y: auto; }
+.imp-fila { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.imp-fila:last-child { border-bottom: 0; }
+.imp-fila .grow { display: flex; flex-direction: column; }
+.imp-fila select { min-height: 32px; font-size: 13px; width: 190px; }
+.imp-resumen { padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); }
+.imp-resumen.vacio { background: color-mix(in srgb, var(--danger) 8%, var(--surface)); }

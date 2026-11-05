@@ -20,7 +20,7 @@ import { render } from '../../../shared/router.js';
 import { db, ui } from '../../../shared/state.js';
 import { $, app } from '../../../shared/ui/dom.js';
 import { activarEditores } from '../../../shared/ui/editor-md.js';
-import { campo, opciones } from '../../../shared/ui/html.js';
+import { campo, opcion, opciones } from '../../../shared/ui/html.js';
 import { ico } from '../../../shared/ui/icons.js';
 import { abrirModal, botonBorrarModal } from '../../../shared/ui/modal.js';
 
@@ -50,21 +50,19 @@ export function modalVistaTareas(v) {
   const f = { ...FILTROS_TAREA_VACIOS, ...v?.filtros };
   /** @param {string} nombre @param {string} label @param {string} opcionesHTML */
   const sel = (nombre, label, opcionesHTML) => campo(label, `<select name="${nombre}">${opcionesHTML}</select>`);
-  /** @param {string} id @param {string} label @param {string} actual */
-  const op = (id, label, actual) => `<option value="${esc(id)}" ${id === actual ? 'selected' : ''}>${esc(label)}</option>`;
   abrirModal(v ? 'Editar vista de tareas' : 'Nueva vista de tareas', `
     ${campo('Nombre de la vista *', `<input name="nombre" required value="${esc(v?.nombre)}" placeholder="Ej. Llamadas a clínicas en negociación">`)}
     <p class="muted small">Elige solo los filtros que quieras; los que dejes en «todas» no filtran.</p>
     <div class="row2">
       ${sel('cuando', 'Fecha', opciones(CUANDO_TAREA, f.cuando))}
-      ${sel('accion', 'Tipo', op('', 'Todos', f.accion) + op('interna', 'Tarea interna', f.accion) + opciones(TIPOS_ACCION, f.accion))}
-      ${sel('prioridad', 'Prioridad', op('', 'Todas', f.prioridad) + opciones(PRIORIDADES, f.prioridad))}
-      ${sel('contacto', 'Contacto', op('', 'Con o sin contacto', f.contacto) + op('con', 'Solo con contacto', f.contacto) + op('sin', 'Solo sin contacto', f.contacto))}
-      ${sel('estado', 'Estado del contacto', op('', 'Todos', f.estado) + opciones(ESTADOS, f.estado))}
-      ${sel('estadoLead', 'Estado lead de la empresa', op('', 'Todos', f.estadoLead) + opciones(ESTADOS_LEAD, f.estadoLead))}
-      ${sel('ownerId', 'Propietario del contacto', op('', 'Todos', f.ownerId) + op('ninguno', 'Sin propietario', f.ownerId) + db.users.map((u) => op(u.id, nombreUsuario(u.id), f.ownerId)).join(''))}
-      ${sel('secuencia', 'Secuencia', op('', 'Todas', f.secuencia) + op('alguna', 'De alguna secuencia', f.secuencia) + op('ninguna', 'De ninguna secuencia', f.secuencia) + db.sequences.map((s) => op(s.id, s.nombre, f.secuencia)).join(''))}
-      ${sel('lista', 'Lista (tareas sin contacto)', op('', 'Todas', f.lista) + ['General', ...listasDeTareas()].map((l) => op(l, `# ${l}`, f.lista)).join(''))}
+      ${sel('accion', 'Tipo', opcion('', 'Todos', f.accion) + opcion('interna', 'Tarea interna', f.accion) + opciones(TIPOS_ACCION, f.accion))}
+      ${sel('prioridad', 'Prioridad', opcion('', 'Todas', f.prioridad) + opciones(PRIORIDADES, f.prioridad))}
+      ${sel('contacto', 'Contacto', opcion('', 'Con o sin contacto', f.contacto) + opcion('con', 'Solo con contacto', f.contacto) + opcion('sin', 'Solo sin contacto', f.contacto))}
+      ${sel('estado', 'Estado del contacto', opcion('', 'Todos', f.estado) + opciones(ESTADOS, f.estado))}
+      ${sel('estadoLead', 'Estado lead de la empresa', opcion('', 'Todos', f.estadoLead) + opciones(ESTADOS_LEAD, f.estadoLead))}
+      ${sel('ownerId', 'Propietario del contacto', opcion('', 'Todos', f.ownerId) + opcion('ninguno', 'Sin propietario', f.ownerId) + db.users.map((u) => opcion(u.id, nombreUsuario(u.id), f.ownerId)).join(''))}
+      ${sel('secuencia', 'Secuencia', opcion('', 'Todas', f.secuencia) + opcion('alguna', 'De alguna secuencia', f.secuencia) + opcion('ninguna', 'De ninguna secuencia', f.secuencia) + db.sequences.map((s) => opcion(s.id, s.nombre, f.secuencia)).join(''))}
+      ${sel('lista', 'Lista (tareas sin contacto)', opcion('', 'Todas', f.lista) + ['General', ...listasDeTareas()].map((l) => opcion(l, `# ${l}`, f.lista)).join(''))}
       ${campo('Texto', `<input name="q" value="${esc(f.q)}" placeholder="En el título, contacto o empresa">`)}
     </div>
   `, (d) => {

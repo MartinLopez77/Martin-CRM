@@ -20,5 +20,4 @@ registrarAcciones({
     guardar();
     render();
   },
-  'sq-reiniciar': () => empezarSecuencia(tareasParaHoy(), 'hoy'),
 });

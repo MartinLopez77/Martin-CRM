@@ -1,0 +1,13 @@
+/* Editor a pantalla completa */
+.md-pantalla { margin-left: 4px; }
+.editor.completa {
+  position: fixed; inset: 16px; z-index: 1000;
+  background: var(--surface); border-color: var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .45);
+}
+.editor.completa .md-barra { padding: 8px 12px; }
+.editor.completa textarea {
+  flex: 1; resize: none; font-size: 15px; line-height: 1.7;
+  padding: 24px max(24px, calc((100% - 820px) / 2));
+}
+body.sin-scroll { overflow: hidden; }

@@ -1,0 +1,6 @@
+/* ---------- Tareas generales (en listas) ---------- */
+
+.td-almohadilla { color: var(--muted); font-weight: 400; }
+.td-nueva-lista { margin-top: -10px; }
+.field.oculto { display: none; }
+.td-tarea.destacada { background: var(--accent-soft); box-shadow: 0 0 0 6px var(--accent-soft); border-radius: 4px; transition: background .4s, box-shadow .4s; }

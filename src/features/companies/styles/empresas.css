@@ -1,0 +1,5 @@
+/* ---------- Empresas ---------- */
+
+.empresa-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: start; }
+.empresa-contactos { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.empresa-notas { padding-top: 12px; border-top: 1px solid var(--border); }

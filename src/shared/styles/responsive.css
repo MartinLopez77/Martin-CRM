@@ -1,0 +1,14 @@
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+  .col-nota { display: none; }
+}
+@media (max-width: 640px) {
+  .topbar-inner { gap: 12px; padding: 0 16px; }
+  .save-status, .reloj { display: none; }
+  .container { padding: 16px 16px 40px; }
+  .row2, .row3 { grid-template-columns: 1fr; }
+  .td-hover { opacity: 1; }
+  .td-barra { flex-direction: column; align-items: stretch; }
+  .td-atajo { display: none; }
+}

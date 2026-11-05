@@ -21,6 +21,21 @@ export const opciones = (lista, sel) =>
   lista.map((o) => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
 
 /**
+ * Una <option> suelta (para desplegables que mezclan opciones fijas y de datos).
+ * @param {string} valor
+ * @param {string} label
+ * @param {string} actual el valor elegido
+ */
+export const opcion = (valor, label, actual) => `<option value="${esc(valor)}" ${valor === actual ? 'selected' : ''}>${esc(label)}</option>`;
+
+/**
+ * Una fila «etiqueta: valor» de una lista <dl> de datos (nada si no hay valor).
+ * @param {string} label
+ * @param {string} valor HTML
+ */
+export const dato = (label, valor) => (valor ? `<dt>${esc(label)}</dt><dd>${valor}</dd>` : '');
+
+/**
  * Campo de fecha con desplegable de atajos (mañana, en 3 días, la semana que viene…).
  * @param {string} nombre
  * @param {string | null | undefined} valor

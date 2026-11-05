@@ -7,6 +7,7 @@ import { horaActual, hoy } from '../shared/lib/dates.js';
 import { db } from '../shared/state.js';
 import { ico } from '../shared/ui/icons.js';
 import { modal } from '../shared/ui/modal.js';
+import { plural } from '../shared/lib/text.js';
 
 const menu = /** @type {HTMLElement} */ (document.getElementById('menu'));
 const menuBtn = /** @type {HTMLElement} */ (document.getElementById('menu-btn'));
@@ -76,5 +77,5 @@ export function actualizarBadges() {
   const b = /** @type {HTMLElement} */ (document.getElementById('badge-tareas'));
   b.textContent = String(pend.length || '');
   b.classList.toggle('alerta', vencidas > 0);
-  b.title = vencidas ? `${vencidas} vencida${vencidas === 1 ? '' : 's'}` : '';
+  b.title = vencidas ? `${vencidas} vencida${plural(vencidas)}` : '';
 }

@@ -1,7 +1,6 @@
 // Tareas: el editor «Añadir tarea» (como Todoist), con fechas en el título y tipo de acción deducido.
 import { TIPOS_ACCION } from '../activity/schema.js';
-import { empresaDe } from '../companies/store.js';
-import { contacto, contactosOrdenados, tocar } from '../contacts/store.js';
+import { contacto, opcionesContactos, tocar } from '../contacts/store.js';
 import { OPCIONES_FECHA_TD, PRIORIDADES } from './schema.js';
 import { guardarNotaDeTarea, listasDeTareas } from './store.js';
 import { claseFecha, diaSemana, fechaAtajo, fmtCuando, hoy } from '../../shared/lib/dates.js';
@@ -165,9 +164,7 @@ export function editorTareaHTML({ fecha = hoy(), contactId = '', fijo = false, l
       <div class="td-pie">
         ${general ? `<input type="hidden" name="contactId" value="">${campoLista(lista, 'td-proyecto-select')}`
           : c ? `<input type="hidden" name="contactId" value="${c.id}"><span class="td-proyecto-fijo">${ico('persona')} ${esc(c.nombre)}</span>` : `
-          <select name="contactId" class="td-proyecto-select" title="Contacto">
-            <option value="">Sin contacto</option>
-            ${contactosOrdenados().map((x) => `<option value="${x.id}" ${x.id === contactId ? 'selected' : ''}>${esc(x.nombre)}${empresaDe(x) ? ` · ${esc(empresaDe(x))}` : ''}</option>`).join('')}
+          <select name="contactId" class="td-proyecto-select" title="Contacto">${opcionesContactos(contactId)}
           </select>`}
         <span class="grow"></span>
         <button type="button" class="btn" data-td-cancelar>Cancelar</button>

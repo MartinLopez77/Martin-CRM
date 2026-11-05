@@ -6,7 +6,7 @@ import { adivinarCampo, analizarImportacion, CAMPOS_IMPORTAR, nombresImportacion
 import { YO } from '../team/store.js';
 import { leerArchivoTexto, leerCSV } from '../../shared/lib/csv.js';
 import { fmtFecha, hoy } from '../../shared/lib/dates.js';
-import { ahora, esc, normalizar, uid } from '../../shared/lib/text.js';
+import { ahora, esc, normalizar, plural, uid } from '../../shared/lib/text.js';
 import { guardar } from '../../shared/persistence.js';
 import { render } from '../../shared/router.js';
 import { db, ui } from '../../shared/state.js';
@@ -80,7 +80,7 @@ export function modalImportar() {
     ui.filtros.importacion = nombreImp;
     if (location.hash === '#/' || location.hash === '') render();
     else location.hash = '#/';
-    avisar(`${r.nuevos.length} contacto${r.nuevos.length === 1 ? '' : 's'} importado${r.nuevos.length === 1 ? '' : 's'} en «${nombreImp}»`);
+    avisar(`${r.nuevos.length} contacto${plural(r.nuevos.length)} importado${plural(r.nuevos.length)} en «${nombreImp}»`);
   });
 
   const form = $('form', modal);
@@ -90,7 +90,7 @@ export function modalImportar() {
     const r = analizarImportacion(filas, mapa);
     $('#imp-resumen', modal).innerHTML = `
       <div class="imp-resumen ${r.nuevos.length ? '' : 'vacio'}">
-        <b>${r.nuevos.length} contacto${r.nuevos.length === 1 ? '' : 's'} nuevo${r.nuevos.length === 1 ? '' : 's'}</b> de ${filas.length} fila${filas.length === 1 ? '' : 's'}
+        <b>${r.nuevos.length} contacto${plural(r.nuevos.length)} nuevo${plural(r.nuevos.length)}</b> de ${filas.length} fila${plural(filas.length)}
         ${r.duplicados ? `<div class="small">· ${r.duplicados} ya ${r.duplicados === 1 ? 'existe' : 'existen'} en el CRM (mismo email): no se ${r.duplicados === 1 ? 'importa' : 'importan'}</div>` : ''}
         ${r.repetidos ? `<div class="small">· ${r.repetidos} con el email repetido en el archivo: solo entra la primera fila</div>` : ''}
         ${r.sinEmail ? `<div class="small">· ${r.sinEmail} sin email válido: no se ${r.sinEmail === 1 ? 'importa' : 'importan'}</div>` : ''}

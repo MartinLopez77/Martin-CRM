@@ -11,7 +11,7 @@ import { inputProp, textoProp, valorProp } from '../../shared/schema.js';
 import { db, ui } from '../../shared/state.js';
 import { $, app } from '../../shared/ui/dom.js';
 import { editorHTML } from '../../shared/ui/editor-md.js';
-import { campo, opciones } from '../../shared/ui/html.js';
+import { campo, dato, opciones } from '../../shared/ui/html.js';
 import { ico } from '../../shared/ui/icons.js';
 import { abrirModal, modal } from '../../shared/ui/modal.js';
 
@@ -82,8 +82,6 @@ function renderTablaEmpresas() {
 export function vistaEmpresa(id) {
   const e = empresaExistente(id);
   const cs = contactosDeEmpresa(id).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  /** @param {string} label @param {string} valor HTML */
-  const dato = (label, valor) => (valor ? `<dt>${esc(label)}</dt><dd>${valor}</dd>` : '');
   const datos = [
     ...propsVisibles().filter((p) => !p.nurturing || esNurturing(e.estadoLead)).map((p) => dato(p.label, textoProp(e, p))),
     dato('Alta', fmtFecha(e.creado)),

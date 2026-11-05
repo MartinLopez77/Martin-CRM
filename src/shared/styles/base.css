@@ -1,0 +1,48 @@
+:root {
+  /* Tema claro: azul y blanco */
+  --bg: #f4f7fc;
+  --surface: #ffffff;
+  --surface-2: #eef3fa;
+  --border: #dde5f0;
+  --text: #16213a;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-soft: #eaf1fe;
+  --danger: #dc2626;
+  --ok: #059669;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(22, 33, 58, .04), 0 1px 3px rgba(22, 33, 58, .06);
+  /* Tareas */
+  --td-accion: var(--accent);
+  --td-p1: #d1453b;
+  --td-p2: #eb8909;
+  --td-p3: #246fe0;
+  --td-hoy: #058527;
+  --td-manana: #ad6200;
+  --td-semana: #692fc2;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; }
+h1 { font-size: 22px; }
+h2 { font-size: 15px; }
+h3 { font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+.txt-danger { color: var(--danger); font-weight: 600; }
+.txt-ok { color: var(--ok); font-weight: 500; }
+.grow { flex: 1; min-width: 0; }
+.truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

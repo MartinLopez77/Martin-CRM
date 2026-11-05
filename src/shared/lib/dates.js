@@ -26,7 +26,7 @@ export const horaActual = (zona = ZONA) => { const p = partesEn(zona); return `$
  * @param {string} zona
  * @param {Date} d
  */
-export function desfase(zona, d) {
+function desfase(zona, d) {
   const p = partesEn(zona, d);
   return (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - Math.floor(d.getTime() / 60000) * 60000) / 60000;
 }

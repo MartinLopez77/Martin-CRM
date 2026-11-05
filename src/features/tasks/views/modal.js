@@ -1,7 +1,6 @@
 // Tareas: editar una tarea (o planear una acción) en un modal.
 import { TIPOS_ACCION } from '../../activity/schema.js';
-import { empresaDe } from '../../companies/store.js';
-import { contactosOrdenados, tocar } from '../../contacts/store.js';
+import { opcionesContactos, tocar } from '../../contacts/store.js';
 import { nota } from '../../notes/store.js';
 import { campoLista, tituloLimpio, tituloNlp } from '../editor.js';
 import { PRIORIDADES } from '../schema.js';
@@ -31,9 +30,7 @@ export function modalTarea(t, nueva = null) {
   abrirModal(creando ? (v.accion ? 'Planear acción' : 'Nueva tarea') : 'Editar tarea', `
     ${campo('Tarea *', tituloNlp(/** @type {string} */ (v.titulo), v.accion ? 'Ej. Llamar el jueves a las 17 para ver qué le pareció la propuesta' : 'Puedes escribir la fecha: mañana, el lunes, a las 17…'))}
     <div class="row2">
-      ${campo('Contacto', `<select name="contactId">
-        <option value="">Sin contacto</option>
-        ${contactosOrdenados().map((c) => `<option value="${c.id}" ${c.id === v.contactId ? 'selected' : ''}>${esc(c.nombre)}${empresaDe(c) ? ` · ${esc(empresaDe(c))}` : ''}</option>`).join('')}
+      ${campo('Contacto', `<select name="contactId">${opcionesContactos(v.contactId)}
       </select>`)}
       ${campo('Tipo de acción', `<select name="accion" ${creando ? '' : 'data-manual="1"'}>
         <option value="">Tarea interna</option>

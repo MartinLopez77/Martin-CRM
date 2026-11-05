@@ -10,7 +10,7 @@ import { tareaExistente, tareasParaHoy } from '../tasks/store.js';
 import { conLocal } from '../settings/horas.js';
 import { claseFecha, fmtCuando } from '../../shared/lib/dates.js';
 import { markdown } from '../../shared/lib/markdown.js';
-import { esc } from '../../shared/lib/text.js';
+import { esc, plural } from '../../shared/lib/text.js';
 import { ui } from '../../shared/state.js';
 import { $, app } from '../../shared/ui/dom.js';
 import { editorHTML } from '../../shared/ui/editor-md.js';
@@ -35,7 +35,7 @@ export function cabeceraColaHTML() {
       <button class="link-btn back" data-action="sq-salir">← Salir</button>
       <div class="sq-progreso">
         <div class="small"><b>${cola.i < total ? `Tarea ${cola.i + 1} de ${total}` : 'Fin de las tareas'}</b>
-          <span class="muted">· ${hechas} completada${hechas === 1 ? '' : 's'}</span></div>
+          <span class="muted">· ${hechas} completada${plural(hechas)}</span></div>
         <div class="sq-barra"><i style="width:${(hechas / total) * 100}%"></i></div>
       </div>
       <div class="row">

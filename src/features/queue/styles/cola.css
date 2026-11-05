@@ -1,0 +1,41 @@
+/* ---------- Secuencia ---------- */
+
+.sq-cabecera { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
+.sq-cabecera .back { margin: 0; }
+.sq-progreso { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sq-barra { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.sq-barra i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.btn:disabled { opacity: .45; cursor: default; background: var(--surface); }
+
+.sq-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+.sq-grid-fin { grid-template-columns: minmax(0, 640px); justify-content: center; }
+
+.sq-tarea { padding: 24px 26px; display: flex; flex-direction: column; gap: 12px; }
+.sq-tipo { font-size: 13px; font-weight: 600; color: var(--accent); }
+.sq-titulo { font-size: 24px; }
+.sq-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.sq-prio.p-alta { color: var(--td-p1); }
+.sq-prio.p-media { color: var(--td-p2); }
+.sq-prio.p-baja { color: var(--td-p3); }
+.sq-hecha { color: var(--ok); font-weight: 600; }
+.sq-detalle { margin: 0; color: var(--muted); }
+.sq-nota-tarea { background: var(--surface-2); border-radius: 8px; padding: 10px 12px; }
+.sq-botones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sq-pie { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+.sq-pie .link-btn { margin: 0; }
+
+.sq-fin-icono { font-size: 38px; }
+.sq-fin-botones { justify-content: center; margin-top: 12px; }
+.sq-cabecera .link-btn.back { margin: 0; color: var(--muted); font-weight: 500; }
+
+/* La tarea en curso encima de la ficha del contacto («Tarea 2 de 10») */
+.cola-ficha { margin-bottom: 18px; }
+.cola-ficha .sq-cabecera { margin-bottom: 10px; }
+.sq-tarea-ficha { padding: 16px 20px; gap: 10px; border-top: 3px solid var(--accent); }
+.sq-tarea-ficha .sq-titulo { font-size: 19px; }
+.sq-tarea-ficha .sq-pie { padding-top: 8px; }
+
+@media (max-width: 760px) {
+  .sq-grid { grid-template-columns: 1fr; }
+  .sq-cabecera { flex-wrap: wrap; }
+}

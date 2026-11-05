@@ -1,0 +1,201 @@
+/* ---------- Tareas (estilo Todoist) ---------- */
+
+.hechas { margin-top: 8px; }
+.hechas summary { cursor: pointer; color: var(--muted); font-size: 12.5px; padding: 4px 0; }
+
+/* Página Tareas */
+.td { max-width: 820px; margin: 0 auto; }
+.td-barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.td-vistas { display: flex; gap: 2px; flex-wrap: wrap; }
+.td-vistas button {
+  font: inherit; font-weight: 500; color: var(--muted);
+  border: 0; background: transparent; border-radius: 6px;
+  padding: 5px 10px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.td-vistas button:hover { background: var(--surface-2); color: var(--text); }
+.td-vistas button.active { background: color-mix(in srgb, var(--td-accion) 12%, transparent); color: var(--td-accion); }
+.td-vistas small { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.td-buscar { width: 230px; min-height: 32px; padding: 4px 10px; font-size: 13px; background: var(--surface-2); border-color: transparent; }
+.td-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.td-h1 { font-size: 26px; font-weight: 700; }
+.td-sub { margin: 4px 0 20px; }
+kbd {
+  font: inherit; font-size: 11px; padding: 0 5px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--surface);
+}
+.td-vacio { padding: 50px 0; text-align: center; color: var(--muted); }
+
+.td-grupo { margin-bottom: 26px; }
+.td-grupo-titulo {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 14px; font-weight: 700;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.td-grupo-n { font-size: 12px; font-weight: 400; color: var(--muted); }
+.td-grupo.vencidas .td-grupo-titulo > span:first-child { color: var(--text); }
+.td-reprogramar {
+  margin-left: auto; border: 0; background: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 500; color: var(--td-accion);
+}
+.td-reprogramar:hover { text-decoration: underline; }
+
+/* Una tarea */
+.td-tarea {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 0 9px;
+  border-bottom: 1px solid var(--border);
+}
+.td-check {
+  --p: var(--muted);
+  width: 18px; height: 18px; margin-top: 2px; padding: 0; flex-shrink: 0;
+  border-radius: 50%; border: 1px solid var(--p);
+  background: color-mix(in srgb, var(--p) 8%, transparent);
+  color: var(--p);
+  display: grid; place-items: center; cursor: pointer;
+}
+.td-check::after {
+  content: ""; width: 4px; height: 8px; margin-top: -2px;
+  border: solid currentColor; border-width: 0 1.6px 1.6px 0;
+  transform: rotate(45deg); opacity: 0; transition: opacity .1s;
+}
+.td-check:hover::after, .td-check:focus-visible::after { opacity: 1; }
+.td-check.p-alta { --p: var(--td-p1); border-width: 2px; background: color-mix(in srgb, var(--p) 12%, transparent); }
+.td-check.p-media { --p: var(--td-p2); border-width: 2px; background: color-mix(in srgb, var(--p) 12%, transparent); }
+.td-check.p-baja { --p: var(--td-p3); border-width: 2px; background: color-mix(in srgb, var(--p) 12%, transparent); }
+.td-tarea.hecha .td-check, .td-tarea.completando .td-check { background: var(--p); color: #fff; }
+.td-tarea.hecha .td-check.p-ninguna, .td-tarea.completando .td-check.p-ninguna { background: var(--muted); border-color: var(--muted); }
+.td-tarea.hecha .td-check::after, .td-tarea.completando .td-check::after { opacity: 1; }
+.td-tarea.completando { opacity: .5; transition: opacity .25s; }
+
+.td-cuerpo { flex: 1; min-width: 0; cursor: pointer; }
+.td-titulo { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.td-tipo { margin-right: 5px; }
+.td-tarea.hecha .td-titulo { text-decoration: line-through; color: var(--muted); }
+.td-desc { font-size: 12.5px; color: var(--muted); margin-top: 1px; overflow-wrap: anywhere; }
+.td-meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px;
+  font-size: 12px; color: var(--muted); margin-top: 3px;
+}
+.td-meta a { color: var(--muted); }
+.td-meta a:hover { color: var(--text); }
+.td-meta .link-btn { margin: 0; font-size: 12px; color: var(--muted); }
+.td-meta .link-btn:hover { color: var(--text); }
+.td-proyecto { margin-left: auto; }
+.td-proyecto span { color: var(--muted); opacity: .7; }
+
+.td-fecha { white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
+.td-chip-fecha { display: inline-flex; align-items: center; gap: 4px; }
+.f-vencida { color: var(--td-p1) !important; }
+.f-hoy { color: var(--td-hoy) !important; }
+.f-manana { color: var(--td-manana) !important; }
+.f-semana { color: var(--td-semana) !important; }
+
+.td-etq-cancelada {
+  font-size: 11px; font-weight: 600; color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  border-radius: 4px; padding: 0 5px; margin-left: 6px; text-decoration: none; display: inline-block;
+}
+.td-cancelar-btn {
+  font: inherit; font-size: 11.5px; line-height: 1.5; font-weight: 500; color: var(--muted);
+  border: 1px solid var(--border); background: var(--surface); border-radius: 6px;
+  padding: 0 7px; cursor: pointer; white-space: nowrap;
+}
+.td-cancelar-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+.td-hover { display: flex; gap: 2px; opacity: 0; transition: opacity .1s; }
+.td-tarea:hover .td-hover, .td-hover:focus-within { opacity: 1; }
+
+/* "+ Añadir tarea" */
+.td-anadir {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  border: 0; background: none; padding: 8px 0; cursor: pointer;
+  font: inherit; color: var(--muted); text-align: left;
+}
+.td-mas {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  font-size: 17px; line-height: 1; color: var(--td-accion);
+}
+.td-anadir:hover { color: var(--td-accion); }
+.td-anadir:hover .td-mas { background: var(--td-accion); color: #fff; }
+
+/* Editor de tarea */
+.td-editor {
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  margin: 8px 0; padding: 10px 10px 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.td-editor:focus-within { border-color: color-mix(in srgb, var(--muted) 55%, transparent); }
+.td-editor input.td-editor-titulo, .td-editor-desc {
+  border: 0; outline: 0; padding: 2px 0; min-height: 0; width: 100%; background: transparent;
+}
+.td-editor input.td-editor-titulo { font-size: 15px; font-weight: 600; }
+.td-editor-desc { font-size: 13px; color: var(--text); }
+.td-editor-desc::placeholder, .td-editor-titulo::placeholder { color: var(--muted); font-weight: 400; }
+.td-editor input:focus { outline: 0; }
+.td-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 10px; }
+.td-chip {
+  font: inherit; font-size: 12.5px; color: var(--muted);
+  min-height: 28px; padding: 2px 8px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+  cursor: pointer; white-space: nowrap;
+}
+.td-chip:hover { background: var(--surface-2); }
+select.td-chip { padding-right: 4px; }
+.td-chip-fecha.f-vencida, .td-chip-fecha.f-hoy, .td-chip-fecha.f-manana, .td-chip-fecha.f-semana { font-weight: 500; }
+.td-chip-prio[data-prio="alta"] { color: var(--td-p1); }
+.td-chip-prio[data-prio="media"] { color: var(--td-p2); }
+.td-chip-prio[data-prio="baja"] { color: var(--td-p3); }
+.td-nota { padding-bottom: 10px; }
+.td-nota .editor:not(.completa) .md-ayuda { display: none; }
+.td-pie {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 0 -10px; padding: 8px 10px; border-top: 1px solid var(--border);
+}
+.td-proyecto-select { min-height: 30px; padding: 2px 8px; font-size: 13px; border-color: transparent; background: var(--surface-2); max-width: 230px; }
+.td-proyecto-fijo { font-size: 13px; color: var(--muted); }
+.td-pie .btn { min-height: 32px; padding: 4px 12px; font-size: 13px; }
+.td-primario { background: var(--td-accion); border-color: var(--td-accion); color: #fff; font-weight: 600; }
+.td-primario:hover { background: var(--td-accion); filter: brightness(1.08); }
+.td-rapido .td-editor { margin: 0; border: 0; padding: 16px 16px 0; }
+.td-rapido .td-pie { margin: 0 -16px; padding: 10px 16px; }
+
+/* Desplegable de fecha */
+.td-pop-wrap { position: relative; }
+.td-pop {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 30;
+  width: 250px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+  display: flex; flex-direction: column;
+}
+.td-pop[hidden] { display: none; }
+.td-pop > button {
+  display: flex; align-items: center; gap: 10px;
+  font: inherit; font-size: 13px; text-align: left;
+  border: 0; background: none; color: var(--text); padding: 6px 8px; border-radius: 6px; cursor: pointer;
+}
+.td-pop > button:hover { background: var(--surface-2); }
+.td-pop > button small { margin-left: auto; color: var(--muted); }
+.td-pop-icono { width: 18px; text-align: center; }
+.td-pop-campos { display: flex; gap: 6px; padding: 8px 4px 2px; margin-top: 4px; border-top: 1px solid var(--border); }
+.td-pop-campos input { min-height: 30px; padding: 3px 6px; font-size: 13px; flex: 1; min-width: 0; }
+
+/* Título que reconoce fechas: el texto reconocido se resalta detrás del input */
+.nlp { position: relative; display: block; }
+.nlp > input { position: relative; z-index: 1; background: transparent; width: 100%; }
+.nlp-espejo {
+  position: absolute; inset: 0; overflow: hidden;
+  white-space: pre; color: transparent; pointer-events: none;
+  border: 1px solid transparent; padding: 7px 10px;
+  font: inherit; display: flex; align-items: center;
+}
+.td-editor .nlp-espejo { padding: 2px 0; border: 0; font-size: 15px; font-weight: 600; }
+.nlp-espejo mark { color: transparent; background: color-mix(in srgb, var(--td-accion) 18%, transparent); border-radius: 3px; }
+.field .nlp > input { background: transparent; }
+.field .nlp { background: var(--surface); border-radius: 8px; }
+
+/* Tareas en la ficha de contacto */
+.td-ficha .td-tarea:first-child { border-top: 1px solid var(--border); }

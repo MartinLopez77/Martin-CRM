@@ -1,0 +1,8 @@
+/* ---------- Ajustes ---------- */
+
+.ajustes { display: flex; flex-direction: column; gap: 12px; }
+.ajustes h3 { margin: 0; }
+.ajustes p { margin: 0; }
+.ajustes .field { max-width: 320px; }
+.ajustes .field.apagado { opacity: .5; }
+.ajustes-ejemplo { padding: 8px 12px; border-radius: 8px; background: var(--surface-2); }
