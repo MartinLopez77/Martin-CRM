@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>CRM Martín</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Logo (plato de arroz) en un único sitio; se usa con <use href="#logo-arroz">. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="logo-arroz" viewBox="0 0 64 64">
+      <g fill="currentColor">
+        <path d="M13 32a19 19 0 0 1 38 0z" opacity=".35"/>
+        <path d="M6 33h52c0 12-11 21-26 21S6 45 6 33z"/>
+        <rect x="23" y="55" width="18" height="3.5" rx="1.75"/>
+      </g>
+    </symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button type="button" id="menu-btn" class="menu-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="#/" class="brand" aria-label="Inicio" title="Inicio"><svg class="brand-logo"><use href="#logo-arroz"/></svg></a>
+      <div id="buscador" class="buscador" role="search">
+        <span class="buscador-icono" data-ico="buscar"></span>
+        <input type="search" id="buscar-global" placeholder="Buscar contactos y empresas" autocomplete="off" aria-label="Buscar contactos y empresas" title="Atajo: /">
+        <div id="buscar-resultados" class="buscar-resultados" hidden></div>
+      </div>
+      <span id="save-status" class="save-status"></span>
+      <span id="reloj" class="reloj" title="Hora de España"></span>
+    </div>
+  </header>
+
+  <div id="menu-fondo" class="menu-fondo"></div>
+  <nav id="menu" class="menu" aria-label="Secciones" aria-hidden="true">
+    <div class="menu-cabecera">
+      <svg class="brand-logo"><use href="#logo-arroz"/></svg>
+      <button type="button" class="icon-btn" id="menu-cerrar" aria-label="Cerrar menú" title="Cerrar (Esc)" data-ico="cerrar"></button>
+    </div>
+    <a href="#/" data-ruta="contactos"><span class="menu-icono" data-ico="persona"></span> Contactos</a>
+    <a href="#/empresas" data-ruta="empresas"><span class="menu-icono" data-ico="empresa"></span> Empresas</a>
+    <a href="#/tareas" data-ruta="tareas"><span class="menu-icono" data-ico="check"></span> Tareas <span id="badge-tareas" class="badge"></span></a>
+    <a href="#/secuencias" data-ruta="secuencias"><span class="menu-icono" data-ico="secuencia"></span> Secuencias</a>
+    <a href="#/equipo" data-ruta="equipo" class="menu-pie"><span class="menu-icono" data-ico="reunion"></span> Equipo</a>
+    <a href="#/ajustes" data-ruta="ajustes"><span class="menu-icono" data-ico="ajustes"></span> Ajustes</a>
+  </nav>
+
+  <main id="app" class="container">
+    <p class="muted">Cargando…</p>
+  </main>
+
+  <aside id="llamada" class="llamada" hidden aria-label="Llamada"></aside>
+  <dialog id="modal"></dialog>
+  <div id="aviso" class="aviso" role="status" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

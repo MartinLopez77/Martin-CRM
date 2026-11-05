@@ -1,0 +1,6 @@
+# Datos de clientes: se quedan solo en este ordenador (no se suben a GitHub)
+data.json
+data.json.tmp
+backups/
+
+node_modules/

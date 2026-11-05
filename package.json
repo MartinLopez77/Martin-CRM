@@ -1,0 +1,9 @@
+{
+  "name": "crm-martin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CRM personal: contactos, notas y tareas",
+  "scripts": {
+    "start": "node server.js --open"
+  }
+}
