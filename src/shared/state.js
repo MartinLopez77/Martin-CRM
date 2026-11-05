@@ -12,8 +12,8 @@
  * @property {import('../features/contacts/schema.js').VistaContactos[]} views
  * @property {import('../features/tasks/schema.js').VistaTareas[]} taskViews
  * @property {any[]} imports
- * @property {any[]} sequences
- * @property {any[]} enrollments
+ * @property {import('../features/sequences/schema.js').Secuencia[]} sequences
+ * @property {import('../features/sequences/schema.js').Inscripcion[]} enrollments
  * @property {Record<string, any>} settings
  */
 

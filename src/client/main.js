@@ -32,6 +32,10 @@ import '../features/queue/actions.js';
 import '../features/call/store.js';
 import '../features/call/window.js';
 import '../features/call/actions.js';
+import '../features/sequences/schema.js';
+import '../features/sequences/store.js';
+import '../features/sequences/views.js';
+import '../features/sequences/actions.js';
 import { iniciar } from '../legacy.js';
 
 iniciar();

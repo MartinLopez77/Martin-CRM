@@ -3,7 +3,7 @@ import { borrarTarea, completarTarea, marcarTarea, tareaExistente, tareasDeLaVis
 import { modalVistaTareas } from './views/list.js';
 import { modalTarea } from './views/modal.js';
 import { empezarSecuencia } from '../queue/store.js';
-import { avisoSecuencia } from '../../legacy.js';
+import { avisoSecuencia } from '../sequences/store.js';
 import { registrarAcciones } from '../../shared/actions.js';
 import { hoy } from '../../shared/lib/dates.js';
 import { guardar } from '../../shared/persistence.js';

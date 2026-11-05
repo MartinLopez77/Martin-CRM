@@ -3,7 +3,7 @@ import { empresa, empresaDe } from '../companies/store.js';
 import { cambiarContacto, contacto, tocar } from '../contacts/store.js';
 import { ACCION_A_NOTA } from '../notes/schema.js';
 import { nota } from '../notes/store.js';
-import { avanzarSecuencia, inscripcion, retrocederSecuencia } from '../../legacy.js';
+import { avanzarSecuencia, inscripcion, retrocederSecuencia } from '../sequences/store.js';
 import { hoy, partesEn, sumarDias, ZONA } from '../../shared/lib/dates.js';
 import { ahora, uid } from '../../shared/lib/text.js';
 import { guardar } from '../../shared/persistence.js';

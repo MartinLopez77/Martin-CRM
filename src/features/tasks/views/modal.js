@@ -6,7 +6,7 @@ import { nota } from '../../notes/store.js';
 import { campoLista, tituloLimpio, tituloNlp } from '../editor.js';
 import { PRIORIDADES } from '../schema.js';
 import { borrarTarea, guardarNotaDeTarea, marcarTarea } from '../store.js';
-import { avisoSecuencia } from '../../../legacy.js';
+import { avisoSecuencia } from '../../sequences/store.js';
 import { fechaAtajo } from '../../../shared/lib/dates.js';
 import { ahora, esc, uid } from '../../../shared/lib/text.js';
 import { guardar } from '../../../shared/persistence.js';
