@@ -4,6 +4,20 @@
   "private": true,
   "description": "CRM personal: contactos, notas y tareas",
   "scripts": {
-    "start": "node server.js --open"
+    "start": "node server.js --open",
+    "typecheck": "tsc -p jsconfig.json",
+    "lint": "eslint .",
+    "test:unit": "node --test \"tests/unit/**/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "check": "npm run typecheck && npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "typescript": "^5.9.3"
   }
 }

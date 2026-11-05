@@ -1,6 +1,11 @@
 # Datos de clientes: se quedan solo en este ordenador (no se suben a GitHub)
-data.json
-data.json.tmp
-backups/
+/data.json
+/data.json.tmp
+/backups/
 
 node_modules/
+
+# Verificación (tests y herramientas)
+tests/.tmp/
+test-results/
+playwright-report/

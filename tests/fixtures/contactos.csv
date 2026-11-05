@@ -1,0 +1,7 @@
+Nombre;Apellidos;Correo electrónico;Teléfono;Empresa;Cargo;Lead Status
+Lucía;Pérez;lucia@dentalnorte.example;+34 611 000 001;Dental Norte;Directora;Prospecting
+Raúl;Díaz;RAUL@dentalnorte.example;+34 611 000 002;Dental Norte;Recepción;
+Ana;Ruiz;ana@clinicaluz.example;+34 600 100 001;Clínica Luz;Directora;
+Sin;Correo;;+34 611 000 003;Otra SL;;
+Lucía;Repetida;lucia@dentalnorte.example;;Dental Norte;;
+"Pedro, hijo";Martín;pedro@reformasmartin.example;;"Reformas Martín, S.L.";Dueño;✅ Open deal

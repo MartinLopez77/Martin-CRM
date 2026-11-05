@@ -381,9 +381,6 @@ const ordenNotas = (a, b) =>
   (b.creado || '').localeCompare(a.creado || '');
 
 const notasDe = (id) => db.notes.filter((n) => n.contactId === id).sort(ordenNotas);
-const ultimaNota = (id) =>
-  db.notes.filter((n) => n.contactId === id)
-    .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.creado || '').localeCompare(a.creado || ''))[0];
 
 const accionesDe = (id) =>
   db.actions.filter((a) => a.contactId === id)
@@ -3052,7 +3049,7 @@ const nombresImportaciones = () =>
 
 // CSV con comas, punto y coma o tabuladores (se detecta solo) y comillas dobles.
 function leerCSV(texto) {
-  texto = texto.replace(/^﻿/, '');
+  texto = texto.replace(/^\uFEFF/, '');
   const primera = texto.split(/\r?\n/, 1)[0];
   const sep = [',', ';', '\t'].reduce((a, b) => (primera.split(b).length > primera.split(a).length ? b : a));
   const filas = [];

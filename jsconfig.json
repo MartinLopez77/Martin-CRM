@@ -1,0 +1,21 @@
+{
+  // Comprobación de tipos del JavaScript con JSDoc (no genera archivos: la app no se compila).
+  // El código antiguo (public/app.js) entra aquí a medida que se migra a src/.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "maxNodeModuleJsDepth": 0
+  },
+  "include": ["tests/**/*.mjs", "playwright.config.mjs", "eslint.config.mjs"]
+}

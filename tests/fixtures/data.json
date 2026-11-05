@@ -1,0 +1,42 @@
+{
+  "contacts": [
+    { "id": "c-ana", "nombre": "Ana Ruiz", "cargo": "Directora", "email": "ana@clinicaluz.example", "telefono": "+34 600 100 001", "estado": "contactado", "origen": "Web", "etiquetas": [], "web": "", "ciudad": "Madrid", "creado": "2026-10-20T09:00:00.000Z", "actualizado": "2026-11-03T10:00:00.000Z", "companyId": "e-luz", "ownerId": "u-martin" },
+    { "id": "c-bruno", "nombre": "Bruno Sanz", "cargo": "Gerente", "email": "bruno@talleressanz.example", "telefono": "+34 600 100 002", "estado": "negociacion", "origen": "Referido", "etiquetas": ["vip"], "web": "", "ciudad": "Valencia", "creado": "2026-10-22T09:00:00.000Z", "actualizado": "2026-11-02T10:00:00.000Z", "companyId": "e-sanz", "ownerId": "u-martin" },
+    { "id": "c-carla", "nombre": "Carla Vidal", "cargo": "Recepción", "email": "", "telefono": "+34 600 100 003", "estado": "nuevo", "origen": "", "etiquetas": [], "web": "", "ciudad": "Madrid", "creado": "2026-10-25T09:00:00.000Z", "actualizado": "2026-11-01T10:00:00.000Z", "companyId": "e-luz", "ownerId": null },
+    { "id": "c-diego", "nombre": "Diego Mora", "cargo": "Dueño", "email": "diego@reformasmora.example", "telefono": "", "estado": "propuesta", "origen": "LinkedIn", "etiquetas": [], "web": "", "ciudad": "Sevilla", "creado": "2026-10-28T09:00:00.000Z", "actualizado": "2026-10-30T10:00:00.000Z", "companyId": "e-mora", "ownerId": "u-lucia" }
+  ],
+  "companies": [
+    { "id": "e-luz", "nombre": "Clínica Luz", "web": "clinicaluz.example", "sector": "Clínicas", "ciudad": "Madrid", "notas": "", "creado": "2026-10-20T09:00:00.000Z" },
+    { "id": "e-sanz", "nombre": "Talleres Sanz", "web": "", "sector": "Talleres", "ciudad": "Valencia", "notas": "", "creado": "2026-10-22T09:00:00.000Z", "estadoLead": "open_deal" },
+    { "id": "e-mora", "nombre": "Reformas Mora", "web": "", "sector": "Reformas", "ciudad": "Sevilla", "notas": "", "creado": "2026-10-28T09:00:00.000Z" }
+  ],
+  "tasks": [
+    { "id": "t-llamar-ana", "titulo": "Llamar a Ana para presentar Diga", "detalle": "", "contactId": "c-ana", "accion": "llamada", "fecha": "2026-11-05", "hora": "11:00", "prioridad": "alta", "hecha": false, "completada": null, "creado": "2026-11-01T09:00:00.000Z" },
+    { "id": "t-wa-bruno", "titulo": "WhatsApp a Bruno con la propuesta", "detalle": "", "contactId": "c-bruno", "accion": "whatsapp", "fecha": "2026-11-05", "hora": null, "prioridad": "ninguna", "hecha": false, "completada": null, "creado": "2026-11-01T09:00:00.000Z" },
+    { "id": "t-facturas", "titulo": "Revisar facturas", "detalle": "", "contactId": null, "lista": "Administración", "accion": null, "fecha": "2026-11-05", "hora": null, "prioridad": "ninguna", "hecha": false, "completada": null, "creado": "2026-11-01T09:00:00.000Z" },
+    { "id": "t-email-diego", "titulo": "Email a Diego con el presupuesto", "detalle": "", "contactId": "c-diego", "accion": "email", "fecha": "2026-11-04", "hora": null, "prioridad": "ninguna", "hecha": false, "completada": null, "creado": "2026-11-01T09:00:00.000Z" },
+    { "id": "t-reunion-bruno", "titulo": "Reunión con Bruno", "detalle": "", "contactId": "c-bruno", "accion": "reunion", "fecha": "2026-11-07", "hora": "10:00", "prioridad": "ninguna", "hecha": false, "completada": null, "creado": "2026-11-01T09:00:00.000Z" },
+    { "id": "t-hecha-ana", "titulo": "Primera llamada a Ana", "detalle": "", "contactId": "c-ana", "accion": "llamada", "fecha": "2026-11-03", "hora": null, "prioridad": "ninguna", "hecha": true, "completada": "2026-11-03T10:00:00.000Z", "creado": "2026-11-01T09:00:00.000Z", "noteId": "n-ana" }
+  ],
+  "notes": [
+    { "id": "n-ana", "contactId": "c-ana", "tipo": "llamada", "titulo": "Primera llamada", "contenido": "**Resumen:** le interesa.\n\n- Volver a llamar", "fecha": "2026-11-03", "fijada": false, "creado": "2026-11-03T10:00:00.000Z" }
+  ],
+  "actions": [
+    { "id": "a-ana", "contactId": "c-ana", "tipo": "llamada", "fecha": "2026-11-03", "hora": "10:00", "resumen": "Primera llamada a Ana", "noteId": "n-ana", "taskId": "t-hecha-ana", "creado": "2026-11-03T10:00:00.000Z" }
+  ],
+  "users": [
+    { "id": "u-martin", "nombre": "Martín", "email": "", "creado": "2026-10-01T09:00:00.000Z" },
+    { "id": "u-lucia", "nombre": "Lucía", "email": "", "creado": "2026-10-01T09:00:00.000Z" }
+  ],
+  "views": [],
+  "taskViews": [],
+  "imports": [],
+  "sequences": [
+    { "id": "s-primer", "nombre": "Primer contacto", "descripcion": "", "creado": "2026-10-01T09:00:00.000Z", "pasos": [
+      { "id": "p1", "tipo": "llamada", "espera": 0, "prioridad": "ninguna", "titulo": "Llamar a {nombre}", "detalle": "" },
+      { "id": "p2", "tipo": "email", "espera": 2, "prioridad": "ninguna", "titulo": "Email a {nombre} de {empresa}", "detalle": "" }
+    ] }
+  ],
+  "enrollments": [],
+  "settings": { "horaSecundaria": true, "zonaSecundaria": "Asia/Kuala_Lumpur", "propsEmpresaOcultas": [], "propsEmpresaExtra": [] }
+}

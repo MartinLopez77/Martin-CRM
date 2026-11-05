@@ -11,8 +11,9 @@ const { exec } = require('child_process');
 const PORT = Number(process.env.PORT) || 3000;
 const URL_APP = `http://localhost:${PORT}`;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DATA_FILE = path.join(__dirname, 'data.json');
-const BACKUP_DIR = path.join(__dirname, 'backups');
+// CRM_DATA_FILE permite usar otro archivo de datos (los tests usan uno ficticio); sus copias van a su lado.
+const DATA_FILE = process.env.CRM_DATA_FILE ? path.resolve(process.env.CRM_DATA_FILE) : path.join(__dirname, 'data.json');
+const BACKUP_DIR = path.join(path.dirname(DATA_FILE), 'backups');
 const MAX_BACKUPS = 30;
 const MAX_BODY = 20 * 1024 * 1024;
 
