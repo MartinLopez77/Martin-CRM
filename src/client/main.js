@@ -26,6 +26,12 @@ import '../features/tasks/editor.js';
 import '../features/tasks/views/list.js';
 import '../features/tasks/views/modal.js';
 import '../features/tasks/actions.js';
+import '../features/queue/store.js';
+import '../features/queue/views.js';
+import '../features/queue/actions.js';
+import '../features/call/store.js';
+import '../features/call/window.js';
+import '../features/call/actions.js';
 import { iniciar } from '../legacy.js';
 
 iniciar();

@@ -50,13 +50,13 @@ export const ui = {
   notasAbiertas: new Set(),
   datosAbiertos: false, // desplegable "Datos" de la ficha
   enfocarTarea: false,
-  /** @type {any} cola de tareas en curso: { ids, i, origen } */
+  /** @type {import('../features/queue/store.js').Cola | null} cola de tareas en curso */
   cola: null,
   /** @type {Set<string>} listas de tareas generales creadas que aún no tienen tareas */
   listasNuevas: new Set(),
   /** @type {Record<string, string>} nota rápida que se está escribiendo en cada tarea de la cola */
   colaNotas: {},
-  /** @type {any} ventana de llamada: { contactId, taskId, telefono, inicio, duracion, resultado, notas, minimizada } */
+  /** @type {import('../features/call/store.js').Llamada | null} la llamada de la ventana de llamada */
   llamada: null,
   /** @type {string | null} tarea cuya ventana de llamada se cerró a mano (no se vuelve a abrir sola) */
   llamadaCerrada: null,

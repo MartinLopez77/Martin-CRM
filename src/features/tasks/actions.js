@@ -2,7 +2,8 @@
 import { borrarTarea, completarTarea, marcarTarea, tareaExistente, tareasDeLaVista, vistaTareaPropia } from './store.js';
 import { modalVistaTareas } from './views/list.js';
 import { modalTarea } from './views/modal.js';
-import { avisoSecuencia, empezarSecuencia } from '../../legacy.js';
+import { empezarSecuencia } from '../queue/store.js';
+import { avisoSecuencia } from '../../legacy.js';
 import { registrarAcciones } from '../../shared/actions.js';
 import { hoy } from '../../shared/lib/dates.js';
 import { guardar } from '../../shared/persistence.js';
