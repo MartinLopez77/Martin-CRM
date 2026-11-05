@@ -5,11 +5,15 @@ import { selectEstado } from './list.js';
 import {
   contactosDeEmpresa, empresa, empresaDe, nurturingDe, propEmpresa, propVisible,
 } from '../../companies/store.js';
+import { accionesDe } from '../../activity/store.js';
+import { accionFuturaHTML, accionHTML } from '../../activity/views.js';
+import { TIPOS_NOTA } from '../../notes/schema.js';
+import { notasDe } from '../../notes/store.js';
+import { renderNotasContacto } from '../../notes/views.js';
 import {
-  accionesDe, accionFuturaHTML, accionHTML, activarNotaCola, anadirTareaHTML, cabeceraColaHTML,
-  editorTareaHTML, enModoCola, inscripcionActiva, limpiarCola, notasDe, opcionesUsuarios, ordenTareas,
-  pendientesDe, prepararLlamadaCola, renderNotasContacto, secuencia, tareaColaActual, tareaColaHTML,
-  tareaHTML, TIPOS_NOTA,
+  activarNotaCola, anadirTareaHTML, cabeceraColaHTML, editorTareaHTML, enModoCola, inscripcionActiva,
+  limpiarCola, opcionesUsuarios, ordenTareas, pendientesDe, prepararLlamadaCola, secuencia,
+  tareaColaActual, tareaColaHTML, tareaHTML,
 } from '../../../legacy.js';
 import { textoProp } from '../../../shared/schema.js';
 import { fmtFecha, horaActual, hoy } from '../../../shared/lib/dates.js';

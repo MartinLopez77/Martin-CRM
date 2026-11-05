@@ -5,9 +5,11 @@ import {
   vistaActual, vistaModificada
 } from '../store.js';
 import { empresa, empresasOrdenadas } from '../../companies/store.js';
+import { tipoAccionDe } from '../../activity/schema.js';
+import { accionesDe } from '../../activity/store.js';
 import {
-  accionesDe, avatarUsuario, conLocal, inscripcionActiva, nombresImportaciones, nombreUsuario,
-  pendientesDe, proximaTarea, secuencia, tipoAccionDe, usuario,
+  avatarUsuario, conLocal, inscripcionActiva, nombresImportaciones, nombreUsuario, pendientesDe,
+  proximaTarea, secuencia, usuario,
 } from '../../../legacy.js';
 import { fmtFecha, fmtRelativa, hoy } from '../../../shared/lib/dates.js';
 import { ahora, esc, iniciales, uid } from '../../../shared/lib/text.js';

@@ -4,9 +4,9 @@
  * Los datos guardados. Cada colección tiene el tipo de su feature (las que siguen en any, aún sin migrar).
  * @typedef {Object} BaseDatos
  * @property {import('../features/contacts/schema.js').Contacto[]} contacts
- * @property {any[]} notes
+ * @property {import('../features/notes/schema.js').Nota[]} notes
  * @property {any[]} tasks
- * @property {any[]} actions
+ * @property {import('../features/activity/schema.js').AccionRealizada[]} actions
  * @property {import('../features/companies/schema.js').Empresa[]} companies
  * @property {any[]} users
  * @property {import('../features/contacts/schema.js').VistaContactos[]} views

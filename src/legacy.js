@@ -1,14 +1,17 @@
 // @ts-nocheck: se tipa al moverlo a src/features/ (este archivo desaparece al terminar la refactorización).
 // Código de las features que todavía no se han movido a src/features/ (se va vaciando fase a fase).
+import { tipoAccionDe, TIPOS_ACCION } from './features/activity/schema.js';
 import { ESTADOS_LEAD, TIPOS_PROP } from './features/companies/schema.js';
 import {
   contactosDeEmpresa, empresa, empresaDe, empresaPorNombre, estadoLeadDe, propsEmpresa, propVisible,
 } from './features/companies/store.js';
 import { vistaEmpresa, vistaEmpresas } from './features/companies/views.js';
-import { estadoDe, ESTADOS, HUBSPOT_ESTADOS, urlHubspot } from './features/contacts/schema.js';
+import { estadoDe, ESTADOS } from './features/contacts/schema.js';
 import { cambiarContacto, cargarVista, contacto, contactosOrdenados, tocar } from './features/contacts/store.js';
 import { vistaContacto } from './features/contacts/views/detail.js';
 import { vistaContactos } from './features/contacts/views/list.js';
+import { ACCION_A_NOTA } from './features/notes/schema.js';
+import { nota } from './features/notes/store.js';
 import { acciones } from './shared/actions.js';
 import { leerArchivoTexto, leerCSV } from './shared/lib/csv.js';
 import {
@@ -22,40 +25,11 @@ import { guardar } from './shared/persistence.js';
 import { definirRender, render, rutaActual } from './shared/router.js';
 import { AJUSTES_DEFECTO, db, setDb, ui } from './shared/state.js';
 import { $, app } from './shared/ui/dom.js';
-import { activarEditores, ajustarScroll, comandoEditor, editorHTML } from './shared/ui/editor-md.js';
+import { activarEditores, ajustarScroll, editorHTML } from './shared/ui/editor-md.js';
 import { campo, campoFecha, opciones } from './shared/ui/html.js';
 import { ico } from './shared/ui/icons.js';
 import { abrirModal, alAbrirModal, botonBorrarModal, modal } from './shared/ui/modal.js';
 import { avisar } from './shared/ui/toast.js';
-
-export const TIPOS_NOTA = [
-  { id: 'videollamada', label: 'Videollamada', icon: 'video', color: '#6366f1',
-    plantilla: '**Asistentes:**\n\n**Resumen:**\n\n**Puntos de dolor / necesidades:**\n- \n\n**Próximos pasos:**\n- ' },
-  { id: 'llamada', label: 'Llamada', icon: 'telefono', color: '#0ea5e9' },
-  { id: 'reunion', label: 'Reunión', icon: 'reunion', color: '#10b981' },
-  { id: 'tener-en-cuenta', label: 'A tener en cuenta', icon: 'idea', color: '#f59e0b' },
-  { id: 'documento', label: 'Documento / enlace', icon: 'enlace', color: '#14b8a6' },
-  // Las crea el CRM solo al cambiar los datos del contacto (no se elige al escribir una nota).
-  { id: 'cambio', label: 'Cambio de datos', icon: 'editar', color: '#94a3b8', auto: true },
-  { id: 'general', label: 'General', icon: 'nota', color: '#64748b' },
-];
-
-// Acciones: lo que yo he hecho hacia el cliente (o tengo planeado hacer).
-const TIPOS_ACCION = [
-  { id: 'llamada', label: 'Llamada', icon: 'telefono', color: '#0ea5e9' },
-  { id: 'llamada-sin-respuesta', label: 'Llamada sin respuesta', icon: 'telefono-x', color: '#94a3b8' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: 'chat', color: '#22c55e' },
-  { id: 'email', label: 'Email', icon: 'correo', color: '#6366f1' },
-  { id: 'videollamada', label: 'Videollamada', icon: 'video', color: '#8b5cf6' },
-  { id: 'reunion', label: 'Reunión', icon: 'reunion', color: '#10b981' },
-  { id: 'reunion-cancelada', label: 'Reunión cancelada', icon: 'cancelado', color: '#ef4444' },
-  { id: 'propuesta', label: 'Propuesta enviada', icon: 'documento', color: '#f59e0b' },
-  { id: 'otra', label: 'Otra', icon: 'pin', color: '#64748b' },
-];
-
-// Al elegir un tipo de nota se sugiere registrarla como esta acción; y al revés, al crear una nota desde una acción.
-const NOTA_A_ACCION = { llamada: 'llamada', videollamada: 'videollamada', reunion: 'reunion' };
-const ACCION_A_NOTA = { llamada: 'llamada', 'llamada-sin-respuesta': 'llamada', videollamada: 'videollamada', reunion: 'reunion' };
 
 // Como en Todoist: P1 (roja) … P4 (sin prioridad, la de por defecto).
 const PRIORIDADES = [
@@ -66,7 +40,7 @@ const PRIORIDADES = [
 ];
 
 // Tareas de reunión: además de completarlas se pueden marcar como canceladas.
-const REUNIONES = ['reunion', 'videollamada'];
+export const REUNIONES = ['reunion', 'videollamada'];
 
 // El CRM trabaja en hora de España (la de los clientes). En Ajustes se puede añadir una hora
 // secundaria (p. ej. la de Malasia), que se muestra entre paréntesis.
@@ -94,12 +68,8 @@ const enLocal = (texto) => {
   return z ? `<span class="local" title="Hora de ${z.label}">(${texto} ${z.sufijo})</span>` : '';
 };
 export const conLocal = (hhmm, fecha) => (hhmm ? `${hhmm} ${zonaSecundaria() ? enLocal(horaLocal(hhmm, fecha, true, zonaSecundaria().id)) : ''}`.trim() : '');
-const tipoDe = (id) => TIPOS_NOTA.find((t) => t.id === id) || TIPOS_NOTA[TIPOS_NOTA.length - 1];
-export const tipoAccionDe = (id) => TIPOS_ACCION.find((t) => t.id === id) || TIPOS_ACCION[TIPOS_ACCION.length - 1];
 const prioridadDe = (id) => PRIORIDADES.find((p) => p.id === id) || PRIORIDADES[3];
 const tarea = (id) => db.tasks.find((t) => t.id === id);
-const nota = (id) => db.notes.find((n) => n.id === id);
-const accion = (id) => db.actions.find((a) => a.id === id);
 export const pendientesDe = (id) => db.tasks.filter((t) => t.contactId === id && !t.hecha);
 const prioridadPeso = (t) => ({ alta: 0, media: 1, baja: 2 }[t.prioridad] ?? 3);
 export const usuario = (id) => db.users.find((u) => u.id === id);
@@ -129,17 +99,6 @@ export function ordenTareas(a, b) {
 }
 
 export const proximaTarea = (id) => pendientesDe(id).sort(ordenTareas)[0];
-
-const ordenNotas = (a, b) =>
-  (b.fijada ? 1 : 0) - (a.fijada ? 1 : 0) ||
-  (b.fecha || '').localeCompare(a.fecha || '') ||
-  (b.creado || '').localeCompare(a.creado || '');
-
-export const notasDe = (id) => db.notes.filter((n) => n.contactId === id).sort(ordenNotas);
-
-export const accionesDe = (id) =>
-  db.actions.filter((a) => a.contactId === id)
-    .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.hora || '').localeCompare(a.hora || '') || (b.creado || '').localeCompare(a.creado || ''));
 const ICONO_CAL = ico('calendario');
 
 // Campo de título que reconoce fechas: el texto reconocido se resalta (con un "espejo" detrás del input)
@@ -2013,89 +1972,6 @@ function modalImportar() {
   });
 }
 
-export function renderNotasContacto(id) {
-  const q = ui.notasContactoQ.trim().toLowerCase();
-  const todas = notasDe(id);
-  const lista = todas
-    .filter((n) => !ui.notaFiltro || n.tipo === ui.notaFiltro)
-    .filter((n) => !q || [n.titulo, n.contenido].some((v) => (v || '').toLowerCase().includes(q)));
-  const msg = !todas.length ? 'Todavía no hay notas para este contacto. Añade una con el botón «Nota» de la tarjeta.' : 'Ninguna nota coincide.';
-  $('#notas-contacto').innerHTML = lista.map(notaHTML).join('') || `<div class="empty card"><p class="muted">${msg}</p></div>`;
-}
-
-function notaHTML(n) {
-  const t = tipoDe(n.tipo);
-  const ac = db.actions.find((a) => a.noteId === n.id);
-  const tAc = ac && tipoAccionDe(ac.tipo);
-  const tareaPend = !ac && db.tasks.find((x) => x.noteId === n.id && !x.hecha);
-  const abierta = ui.notasAbiertas.has(n.id);
-  const contenido = n.contenido || '';
-  const larga = contenido.length > 240 || contenido.split('\n').length > 4;
-  return `
-    <article class="nota card ${n.fijada ? 'fijada' : ''}" id="nota-${n.id}" style="--c:${t.color}">
-      <header>
-        <span class="tipo-pill">${ico(t.icon)} ${t.label}${tAc && tAc.label === t.label ? ` <span title="Registrada como acción">${ico('rayo')}</span>` : ''}</span>
-        <time>${fmtFecha(n.fecha)}</time>
-        ${tAc && tAc.label !== t.label ? `<span class="accion-pill" style="--c:${tAc.color}" title="Registrada como acción">${ico('rayo')} ${ico(tAc.icon)} ${tAc.label}</span>` : ''}
-        ${tareaPend ? `<span class="accion-pill futura-pill" title="Nota de una tarea pendiente">${ico('reloj')} ${esc(tareaPend.titulo)}${tareaPend.fecha ? ` · ${fmtRelativa(tareaPend.fecha)}` : ''}</span>` : ''}
-        <div class="nota-acciones">
-          <button class="icon-btn" data-action="nota-pantalla" data-id="${n.id}" title="Abrir a pantalla completa">${ico('expandir')}</button>
-          <button class="icon-btn ${n.fijada ? 'on' : ''}" data-action="fijar-nota" data-id="${n.id}" title="${n.fijada ? 'Desfijar' : 'Fijar arriba'}">${ico('pin')}</button>
-          <button class="icon-btn" data-action="editar-nota" data-id="${n.id}" title="Editar">${ico('editar')}</button>
-          <button class="icon-btn" data-action="borrar-nota" data-id="${n.id}" title="Eliminar">${ico('cerrar')}</button>
-        </div>
-      </header>
-      ${n.titulo ? `<h4 class="${larga ? 'clicable' : ''}" ${larga ? `data-action="toggle-nota" data-id="${n.id}"` : ''}>${esc(n.titulo)}</h4>` : ''}
-      ${contenido ? `<div class="nota-body md ${larga && !abierta ? 'colapsada' : ''}">${markdown(contenido)}</div>` : ''}
-      ${larga ? `<button class="link-btn small ver-mas" data-action="toggle-nota" data-id="${n.id}">${abierta ? 'Ver menos ▴' : 'Ver más ▾'}</button>` : ''}
-      ${n.telefono || n.email || n.hubspotId ? `
-        <div class="nota-extra">
-          ${n.telefono ? `<a href="tel:${esc(n.telefono)}">${ico('telefono')} ${esc(n.telefono)}</a>` : ''}
-          ${n.email ? `<a href="mailto:${esc(n.email)}">${ico('correo')} ${esc(n.email)}</a>` : ''}
-          ${n.hubspotId ? `<a href="${urlHubspot(n.hubspotId)}" target="_blank" rel="noopener">HubSpot ↗</a>${n.hubspotEstado ? ` <span class="muted">${esc(HUBSPOT_ESTADOS[n.hubspotEstado] || n.hubspotEstado)}</span>` : ''}` : ''}
-        </div>` : ''}
-    </article>`;
-}
-
-export function accionHTML(a) {
-  const t = tipoAccionDe(a.tipo);
-  const n = a.noteId && nota(a.noteId);
-  return `
-    <div class="tl-item" style="--c:${t.color}">
-      <span class="tl-punto" title="${t.label}">${ico(t.icon)}</span>
-      <div class="tl-cuerpo" data-action="editar-accion" data-id="${a.id}" title="Editar acción">
-        <div class="tl-cabecera">
-          <strong>${t.label}</strong>
-          <time>${fmtFecha(a.fecha)}${a.hora ? ` · ${conLocal(a.hora, a.fecha)}` : ''}</time>
-        </div>
-        ${a.resumen ? `<div class="tl-texto">${esc(a.resumen)}</div>` : ''}
-        ${n ? `<button class="link-btn small" data-action="ver-nota" data-id="${n.id}">${ico('nota')} ${!n.titulo || n.titulo === a.resumen ? 'Ver nota' : esc(n.titulo)}</button>` : ''}
-      </div>
-    </div>`;
-}
-
-export function accionFuturaHTML(t) {
-  const ta = tipoAccionDe(t.accion);
-  const vencida = t.fecha && t.fecha < hoy();
-  return `
-    <div class="tl-item futura" style="--c:${ta.color}">
-      <span class="tl-punto" title="${ta.label}">${ico(ta.icon)}</span>
-      <div class="tl-cuerpo" data-action="editar-tarea" data-id="${t.id}" title="Editar tarea">
-        <div class="tl-cabecera">
-          <strong>${esc(t.titulo)}</strong>
-        </div>
-        <div class="tl-texto ${vencida ? 'txt-danger' : ''}">
-          ${t.fecha ? fmtRelativa(t.fecha) : 'Sin fecha'}${t.hora ? ` · ${conLocal(t.hora, t.fecha || hoy())}` : ''} · ${ta.label}
-        </div>
-        ${t.noteId && nota(t.noteId) ? `<button class="link-btn small" data-action="ver-nota" data-id="${t.noteId}">${ico('nota')} Ver nota</button>` : ''}
-      </div>
-      <div class="tl-botones">
-        <button class="btn sm hecho-btn" data-action="completar-accion" data-id="${t.id}" title="Marcar como hecha y pasarla a Realizadas">✓</button>
-        ${REUNIONES.includes(t.accion) ? `<button class="btn sm cancelada-btn" data-action="cancelar-reunion" data-id="${t.id}" title="La reunión no se hizo: pasa a Realizadas como «Reunión cancelada»">${ico('cancelado')}</button>` : ''}
-      </div>
-    </div>`;
-}
-
 // Crea o actualiza la nota asociada a una tarea (la de "Nota"). Si la tarea es de un contacto, la nota se ve también en su ficha.
 function guardarNotaDeTarea(t, contenido) {
   const texto = (contenido || '').trim();
@@ -2124,7 +2000,8 @@ function guardarNotaDeTarea(t, contenido) {
 }
 
 // Editar una tarea, o crear una nueva (`nueva` con contactId/accion por defecto, p. ej. desde "+ Planear").
-function modalTarea(t, nueva = null) {
+/** @param {any} t @param {any} [nueva] */
+export function modalTarea(t, nueva = null) {
   const creando = !t;
   const v = t || { titulo: '', detalle: '', contactId: nueva?.contactId || null, accion: nueva?.accion || null, fecha: fechaAtajo('manana'), hora: '', prioridad: 'ninguna', hecha: false };
   const n = v.noteId && nota(v.noteId);
@@ -2182,112 +2059,6 @@ function modalTarea(t, nueva = null) {
     botonBorrarModal(() => {
       if (!confirm(`¿Eliminar la tarea "${t.titulo}"?${n && n.contactId ? ' Su nota se conserva.' : ''}${avisoSecuencia(t)}`)) return false;
       borrarTarea(t);
-      guardar();
-      render();
-    });
-  }
-}
-
-// Editar una nota, o crear una nueva para `contactId` (botón «Nota» de la tarjeta del contacto).
-function modalNota(n, pantallaCompleta = false, contactId = null) {
-  const nueva = !n;
-  const v = n || { tipo: 'general', fecha: hoy(), titulo: '', contenido: '', fijada: false };
-  abrirModal(nueva ? 'Nueva nota' : 'Editar nota', `
-    <div class="row2">
-      ${campo('Tipo', `<select name="tipo">${opciones(TIPOS_NOTA.filter((t) => !t.auto || t.id === v.tipo), v.tipo)}</select>`)}
-      ${campo('Fecha', `<input type="date" name="fecha" value="${esc(v.fecha)}">`)}
-    </div>
-    ${campo('Título', `<input name="titulo" value="${esc(v.titulo)}" placeholder="${nueva ? 'Opcional' : ''}">`)}
-    <div class="field"><span>Contenido</span>${editorHTML('contenido', v.contenido, nueva ? 8 : 14, nueva ? 'Escribe la nota… (**negrita**, - listas, 1. listas numeradas, enlaces)' : '')}</div>
-    ${nueva ? `
-      <div class="registrar-accion">
-        <span>${ico('rayo')} Registrar también como acción</span>
-        <select name="accion">
-          <option value="">No</option>
-          ${opciones(TIPOS_ACCION, '')}
-        </select>
-      </div>` : ''}
-    <label class="check"><input type="checkbox" name="fijada" ${v.fijada ? 'checked' : ''}> ${ico('pin')} Fijar arriba</label>
-  `, (d) => {
-    const titulo = d.titulo.trim();
-    const contenido = d.contenido.trim();
-    if (!titulo && (!contenido || contenido === tipoDe(d.tipo).plantilla?.trim())) return false;
-    const datos = { tipo: d.tipo, fecha: d.fecha || hoy(), titulo, contenido, fijada: d.fijada };
-    if (nueva) {
-      const nn = { id: uid(), contactId, ...datos, creado: ahora() };
-      db.notes.push(nn);
-      if (d.accion) {
-        const primeraLinea = contenido.split('\n').find((l) => l.trim())?.replace(/[*#>-]/g, '').trim() || '';
-        db.actions.push({
-          id: uid(), contactId, tipo: d.accion, fecha: nn.fecha, hora: null,
-          resumen: titulo || primeraLinea.slice(0, 120), noteId: nn.id, taskId: null, creado: ahora(),
-        });
-      }
-    } else {
-      Object.assign(n, datos, { editado: ahora() });
-    }
-    tocar(contactId || n.contactId);
-    guardar();
-    render();
-  });
-  if (nueva) {
-    const form = $('form', modal);
-    form.addEventListener('change', (e) => {
-      if (e.target.name === 'accion') form.dataset.accionManual = '1';
-      if (e.target.name !== 'tipo') return;
-      // Al elegir "Videollamada" con la nota vacía, se rellena la plantilla; si se cambia de tipo sin tocarla, se quita.
-      const plantilla = tipoDe(e.target.value).plantilla;
-      const esPlantilla = TIPOS_NOTA.some((t) => t.plantilla && t.plantilla === form.contenido.value);
-      if (!form.contenido.value.trim() || esPlantilla) form.contenido.value = plantilla || '';
-      // Mientras no se haya elegido a mano, la acción sigue al tipo de nota (nota de llamada → acción "Llamada").
-      if (form.dataset.accionManual !== '1') form.accion.value = NOTA_A_ACCION[e.target.value] || '';
-    });
-    form.titulo.focus();
-  }
-  if (pantallaCompleta) comandoEditor($('textarea[name=contenido]', modal), 'pantalla');
-}
-
-// Registrar una acción nueva (con una nota opcional) o editar una existente.
-function modalAccion(contactId, a) {
-  const nueva = !a;
-  const v = a || { tipo: 'llamada', fecha: hoy(), hora: '', resumen: '' };
-  const n = a?.noteId && nota(a.noteId);
-  abrirModal(nueva ? 'Registrar acción' : 'Editar acción', `
-    <div class="row3">
-      ${campo('Tipo', `<select name="tipo">${opciones(TIPOS_ACCION, v.tipo)}</select>`)}
-      ${campo('Fecha', `<input type="date" name="fecha" required value="${esc(v.fecha)}">`)}
-      ${campo('Hora (España)', `<input type="time" name="hora" value="${esc(v.hora)}">`)}
-    </div>
-    <p class="muted small">Para algo que todavía no has hecho, usa <b>+ Planear</b>: queda como acción próxima.</p>
-    ${campo('Resumen', `<input name="resumen" value="${esc(v.resumen)}" placeholder="Ej. Le he mandado la propuesta por WhatsApp">`)}
-    ${n
-      ? `<p class="muted small">${ico('nota')} Tiene asociada la nota «${esc(n.titulo || fmtFecha(n.fecha))}». Edítala desde la columna de notas.</p>`
-      : `<div class="field"><span>Nota asociada (opcional)</span>${editorHTML('nota', '', 6, 'Se guardará como nota de este contacto, enlazada a la acción')}</div>`}
-  `, (d) => {
-    const datos = { tipo: d.tipo, fecha: d.fecha || hoy(), hora: d.hora || null, resumen: d.resumen.trim() };
-    let ac = a;
-    if (nueva) {
-      ac = { id: uid(), contactId, noteId: null, taskId: null, creado: ahora(), ...datos };
-      db.actions.push(ac);
-    } else {
-      Object.assign(ac, datos);
-    }
-    if (d.nota?.trim()) {
-      const nn = {
-        id: uid(), contactId, tipo: ACCION_A_NOTA[d.tipo] || 'general', titulo: datos.resumen,
-        contenido: d.nota.trim(), fecha: datos.fecha, fijada: false, creado: ahora(),
-      };
-      db.notes.push(nn);
-      ac.noteId = nn.id;
-    }
-    tocar(contactId);
-    guardar();
-    render();
-  });
-  if (!nueva) {
-    botonBorrarModal(() => {
-      if (!confirm('¿Eliminar esta acción? La nota asociada, si la hay, se conserva.')) return false;
-      db.actions = db.actions.filter((x) => x.id !== a.id);
       guardar();
       render();
     });
@@ -2478,45 +2249,6 @@ Object.assign(acciones, {
     guardar();
     render();
   },
-  'filtro-nota': (el) => { ui.notaFiltro = el.dataset.tipo; render(); },
-  'toggle-nota': (el) => {
-    const id = el.dataset.id;
-    if (ui.notasAbiertas.has(id)) ui.notasAbiertas.delete(id);
-    else ui.notasAbiertas.add(id);
-    const art = document.getElementById('nota-' + id);
-    if (art) art.outerHTML = notaHTML(nota(id));
-  },
-  'ver-nota': (el) => {
-    const id = el.dataset.id;
-    ui.notaFiltro = '';
-    ui.notasContactoQ = '';
-    ui.notasAbiertas.add(id);
-    render();
-    const art = document.getElementById('nota-' + id);
-    if (art) {
-      art.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      art.classList.add('destacada');
-      setTimeout(() => art.classList.remove('destacada'), 1600);
-    }
-  },
-  'fijar-nota': (el) => {
-    const n = nota(el.dataset.id);
-    n.fijada = !n.fijada;
-    guardar();
-    render();
-  },
-  'editar-nota': (el) => modalNota(nota(el.dataset.id)),
-  'borrar-nota': (el) => {
-    const id = el.dataset.id;
-    const ac = db.actions.find((a) => a.noteId === id);
-    if (!confirm(ac ? '¿Eliminar esta nota? La acción asociada se conserva, sin nota.' : '¿Eliminar esta nota?')) return;
-    db.notes = db.notes.filter((n) => n.id !== id);
-    db.actions.forEach((a) => { if (a.noteId === id) a.noteId = null; });
-    guardar();
-    render();
-  },
-  'nueva-accion': (el) => modalAccion(el.dataset.id),
-  'nueva-nota': (el) => modalNota(null, false, el.dataset.id),
   // Importar CSV y propiedades de empresa
   'importar-csv': () => modalImportar(),
   'ver-importacion': (el) => {
@@ -2539,10 +2271,4 @@ Object.assign(acciones, {
   },
   'llamar': (el) => abrirLlamada(el.dataset.id),
   'abrir-llamada': (el) => { abrirLlamada(el.dataset.id, el.dataset.tarea || null); render(); },
-  'planear-accion': (el) => modalTarea(null, { contactId: el.dataset.id, accion: 'llamada' }),
-  'nota-pantalla': (el) => modalNota(nota(el.dataset.id), true),
-  'editar-accion': (el) => {
-    const a = accion(el.dataset.id);
-    modalAccion(a.contactId, a);
-  },
 });

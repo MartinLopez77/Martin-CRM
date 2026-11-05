@@ -75,6 +75,7 @@ registrarAcciones({
   'masivo-borrar': () => {
     const lista = seleccionados();
     if (!confirm(`¿Eliminar ${lista.length} contacto${lista.length === 1 ? '' : 's'} con todas sus notas, tareas y acciones? No se puede deshacer.`)) return;
+    /** @type {Set<string | null | undefined>} */
     const ids = new Set(lista.map((c) => c.id));
     db.contacts = db.contacts.filter((c) => !ids.has(c.id));
     db.notes = db.notes.filter((n) => !ids.has(n.contactId));

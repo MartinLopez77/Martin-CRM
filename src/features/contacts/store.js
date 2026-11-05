@@ -1,7 +1,8 @@
 // Contactos: consultas y cambios sobre db.contacts (vistas guardadas, filtros, orden y notas de cambio).
 import { CAMPOS_HISTORIAL, ESTADOS, FILTROS_VACIOS, ORDEN_DEFECTO, VISTAS_BASE } from './schema.js';
 import { empresaDe } from '../companies/store.js';
-import { accionesDe, inscripcionActiva, nombreUsuario, pendientesDe, proximaTarea } from '../../legacy.js';
+import { accionesDe } from '../activity/store.js';
+import { inscripcionActiva, nombreUsuario, pendientesDe, proximaTarea } from '../../legacy.js';
 import { horaActual, hoy } from '../../shared/lib/dates.js';
 import { ahora, uid } from '../../shared/lib/text.js';
 import { db, ui } from '../../shared/state.js';

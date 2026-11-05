@@ -1,8 +1,9 @@
 // Clics de la interfaz: cada botón o fila lleva data-action="<nombre>" y aquí se busca su función.
-// Cada feature añade las suyas con Object.assign(acciones, { ... }).
+// Cada feature añade las suyas con registrarAcciones({ ... }).
 import { app } from './ui/dom.js';
 
-/** @typedef {(el: HTMLElement, e: MouseEvent) => unknown} Accion */
+/** El elemento pulsado: sus data-* siempre vienen en el HTML que lo pinta. @typedef {HTMLElement & { dataset: Record<string, string> }} ElementoAccion */
+/** @typedef {(el: ElementoAccion, e: MouseEvent) => unknown} Accion */
 
 /** @type {Record<string, Accion>} */
 export const acciones = {};
@@ -23,5 +24,5 @@ app.addEventListener('click', (e) => {
   // Un enlace, select o botón dentro de un elemento clicable (p. ej. una fila) hace lo suyo, no abre la fila.
   const interactivo = objetivo.closest('a, select, input, textarea, button, label');
   if (interactivo && interactivo !== el && el.contains(interactivo)) return;
-  acciones[/** @type {string} */ (el.dataset.action)]?.(el, e);
+  acciones[/** @type {string} */ (el.dataset.action)]?.(/** @type {ElementoAccion} */ (el), e);
 });
