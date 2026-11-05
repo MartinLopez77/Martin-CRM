@@ -1,0 +1,4 @@
+# Finales de línea: LF en todo el código (es lo que guarda git), CRLF en los .bat (cmd de Windows).
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
