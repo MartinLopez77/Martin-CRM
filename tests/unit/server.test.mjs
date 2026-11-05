@@ -53,10 +53,15 @@ test('guarda, vuelve a leer y hace la copia diaria junto al archivo de datos', a
   assert.match(copias[0], /^data-\d{4}-\d{2}-\d{2}\.json$/);
 });
 
-test('sirve la interfaz y no deja salir de public/', async () => {
+test('sirve la interfaz y sus módulos, pero nada fuera de src/ ni el código del servidor', async () => {
   const html = await fetch(`http://127.0.0.1:${PORT}/`);
   assert.equal(html.status, 200);
   assert.match(await html.text(), /<title>CRM Martín<\/title>/);
-  const fuera = await fetch(`http://127.0.0.1:${PORT}/..%2fserver.js`);
-  assert.notEqual(fuera.status, 200);
+  const modulo = await fetch(`http://127.0.0.1:${PORT}/shared/lib/dates.js`);
+  assert.equal(modulo.status, 200);
+  assert.match(modulo.headers.get('content-type') || '', /^text\/javascript/);
+  for (const ruta of ['/..%2fserver.js', '/..%2fdata.json', '/server/storage.js']) {
+    const r = await fetch(`http://127.0.0.1:${PORT}${ruta}`);
+    assert.equal(r.status, 403, ruta);
+  }
 });

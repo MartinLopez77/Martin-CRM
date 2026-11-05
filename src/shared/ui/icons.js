@@ -1,0 +1,47 @@
+// Iconos propios: trazo fino, siempre del mismo color (el color lo pone el CSS de .ico).
+
+/** @type {Record<string, string>} */
+const ICONOS = {
+  telefono: '<path d="M5.6 2.5H3.8c-.7 0-1.3.6-1.2 1.3.5 4.8 4.3 8.6 9.1 9.1.7.1 1.3-.5 1.3-1.2v-1.8l-2.6-1-1.3 1.3A8 8 0 0 1 5.3 6.4L6.6 5z"/>',
+  'telefono-x': '<path d="M5.6 2.5H3.8c-.7 0-1.3.6-1.2 1.3.5 4.8 4.3 8.6 9.1 9.1.7.1 1.3-.5 1.3-1.2v-1.8l-2.6-1-1.3 1.3A8 8 0 0 1 5.3 6.4L6.6 5z"/><path d="m10 2.5 3 3m0-3-3 3"/>',
+  chat: '<path d="M3 13V5a2.5 2.5 0 0 1 2.5-2.5h5A2.5 2.5 0 0 1 13 5v3a2.5 2.5 0 0 1-2.5 2.5H6z"/>',
+  correo: '<rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/>',
+  video: '<rect x="1.5" y="4" width="9" height="8" rx="1.5"/><path d="m10.5 7 4-2v6l-4-2"/>',
+  reunion: '<circle cx="6" cy="5.5" r="2.2"/><path d="M2 13c.4-2.3 2-3.5 4-3.5s3.6 1.2 4 3.5"/><circle cx="11.5" cy="6" r="1.7"/><path d="M11 9.6c1.6 0 2.8 1 3.1 2.9"/>',
+  cancelado: '<circle cx="8" cy="8" r="5.5"/><path d="m4.1 4.1 7.8 7.8"/>',
+  documento: '<path d="M4 1.8h5l3 3V14H4z"/><path d="M9 1.8v3h3M6 8h4M6 10.5h4"/>',
+  pin: '<path d="M6 2h4l-.5 4 2 2.5h-7l2-2.5z"/><path d="M8 8.5V14"/>',
+  nota: '<rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>',
+  editar: '<path d="M3 13h2.5L13 5.5 10.5 3 3 10.5z"/><path d="m9.5 4 2.5 2.5"/>',
+  idea: '<path d="M6 12h4M6.5 14h3"/><path d="M5 9.5a4 4 0 1 1 6 0c-.6.6-1 1.2-1 2H6c0-.8-.4-1.4-1-2z"/>',
+  enlace: '<path d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2A2.5 2.5 0 0 0 9 3.5l-.8.8"/><path d="M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.5l.8-.8"/>',
+  reloj: '<circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/>',
+  calendario: '<rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.8v2.4M10.5 1.8v2.4"/>',
+  persona: '<circle cx="8" cy="5.5" r="2.5"/><path d="M3 14c.5-3 2.5-4.5 5-4.5s4.5 1.5 5 4.5"/>',
+  check: '<path d="m3 8.5 3 3 7-7"/>',
+  'check-circulo': '<circle cx="8" cy="8" r="6"/><path d="m5.3 8.2 1.9 1.9 3.6-3.8"/>',
+  bandeja: '<path d="M2 9h3.5l1 2h3l1-2H14"/><path d="M2 9l2-5.5h8L14 9v4.5H2z"/>',
+  sol: '<circle cx="8" cy="8" r="2.8"/><path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/>',
+  sofa: '<path d="M2.5 7.5H4V10h8V7.5h1.5V12h-11zM4 7.5V5h8v2.5M3.5 12v1.5M12.5 12v1.5"/>',
+  flecha: '<path d="M3 8h10M9 4l4 4-4 4"/>',
+  lista: '<path d="M6 4.5h7M6 8h7M6 11.5h7M3 4.5h.01M3 8h.01M3 11.5h.01"/>',
+  bandera: '<path d="M3.5 14V2.5M3.5 3h8L10 6l1.5 3h-8"/>',
+  rayo: '<path d="M9 1.5 3.5 9H8l-1 5.5L12.5 7H8z"/>',
+  expandir: '<path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/>',
+  papelera: '<path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.5 6.5V11M9.5 6.5V11"/>',
+  cerrar: '<path d="m4 4 8 8m0-8-8 8"/>',
+  puntos: '<circle cx="3.5" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.1" fill="currentColor" stroke="none"/>',
+  play: '<path d="M5 3.5v9l7-4.5z"/>',
+  mas: '<path d="M8 3v10M3 8h10"/>',
+  empresa: '<rect x="2.5" y="2" width="7" height="12" rx="1"/><path d="M9.5 6h3a1 1 0 0 1 1 1v7h-4M5 5h2M5 8h2M5 11h2"/>',
+  secuencia: '<circle cx="3.5" cy="4" r="1.5"/><circle cx="3.5" cy="12" r="1.5"/><path d="M3.5 5.5v5M7 4h6.5M7 12h6.5M7 8h4"/>',
+  ajustes: '<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.7M8 12.5v1.7M1.8 8h1.7M12.5 8h1.7M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M3.6 12.4l1.2-1.2M11.2 4.8l1.2-1.2"/>',
+  subir: '<path d="m4 10 4-4 4 4"/>',
+  bajar: '<path d="m4 6 4 4 4-4"/>',
+  buscar: '<circle cx="7" cy="7" r="4.5"/><path d="m10.4 10.4 3.3 3.3"/>',
+  filtro: '<path d="M2.5 3h11L9.3 8v4.6l-2.6 1.2V8z"/>',
+  importar: '<path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11v2.5h11V11"/>',
+};
+
+/** El SVG de un icono (vacío si no existe). @param {string} nombre */
+export const ico = (nombre) => `<svg class="ico" viewBox="0 0 16 16" aria-hidden="true">${ICONOS[nombre] || ''}</svg>`;

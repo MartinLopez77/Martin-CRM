@@ -1,4 +1,23 @@
-'use strict';
+// @ts-nocheck: se tipa al moverlo a src/features/ (este archivo desaparece al terminar la refactorización).
+// Código de las features que todavía no se han movido a src/features/ (se va vaciando fase a fase).
+import { db, setDb, ui, AJUSTES_DEFECTO } from './shared/state.js';
+import { guardar } from './shared/persistence.js';
+import { rutaActual, render, definirRender } from './shared/router.js';
+import { acciones } from './shared/actions.js';
+import { app, $ } from './shared/ui/dom.js';
+import { ico } from './shared/ui/icons.js';
+import { campo, opciones, campoFecha } from './shared/ui/html.js';
+import { avisar } from './shared/ui/toast.js';
+import { modal, abrirModal, botonBorrarModal, alAbrirModal } from './shared/ui/modal.js';
+import { activarEditores, editorHTML, comandoEditor, ajustarScroll } from './shared/ui/editor-md.js';
+import { esc, uid, ahora, pad, normalizar, iniciales } from './shared/lib/text.js';
+import {
+  ZONA, partesEn, hoy, horaActual, horaLocal, sumarDias, fmtFecha, fmtRelativa, diaSemana, fmtCuando,
+  claseFecha, tituloDia, fechaAtajo,
+} from './shared/lib/dates.js';
+import { analizarFechas, quitarRangos, accionDeTitulo } from './shared/lib/nlp.js';
+import { markdown } from './shared/lib/markdown.js';
+import { leerCSV, leerArchivoTexto } from './shared/lib/csv.js';
 
 // ---------- Configuración ----------
 
@@ -55,7 +74,6 @@ const REUNIONES = ['reunion', 'videollamada'];
 
 // El CRM trabaja en hora de España (la de los clientes). En Ajustes se puede añadir una hora
 // secundaria (p. ej. la de Malasia), que se muestra entre paréntesis.
-const ZONA = 'Europe/Madrid';
 const ZONAS_SECUNDARIAS = [
   { id: 'Asia/Kuala_Lumpur', label: 'Malasia', sufijo: 'MY' },
   { id: 'Asia/Singapore', label: 'Singapur', sufijo: 'SG' },
@@ -66,7 +84,6 @@ const ZONAS_SECUNDARIAS = [
   { id: 'America/Bogota', label: 'Colombia', sufijo: 'CO' },
   { id: 'America/Argentina/Buenos_Aires', label: 'Argentina', sufijo: 'AR' },
 ];
-const AJUSTES_DEFECTO = { horaSecundaria: true, zonaSecundaria: 'Asia/Kuala_Lumpur' };
 const zonaSecundaria = () => (db.settings?.horaSecundaria ? ZONAS_SECUNDARIAS.find((z) => z.id === db.settings.zonaSecundaria) : null);
 
 const HUBSPOT_PORTAL = '148719910';
@@ -148,177 +165,14 @@ const VISTAS_BASE = [
 // Tipos de paso de una secuencia: cada paso crea una tarea de ese tipo de acción.
 const TIPOS_PASO = ['llamada', 'email', 'whatsapp', 'videollamada', 'reunion', 'otra'];
 
-// ---------- Estado ----------
-
-let db = { contacts: [], notes: [], tasks: [], actions: [], companies: [], users: [], views: [], taskViews: [], imports: [], sequences: [], enrollments: [], settings: { ...AJUSTES_DEFECTO } };
-
-const ui = {
-  vistaId: (() => { try { return localStorage.getItem('crm-vista') || 'todos'; } catch { return 'todos'; } })(),
-  filtros: null, // filtros de la tabla de contactos (se cargan de la vista)
-  orden: null,
-  seleccion: new Set(), // contactos marcados en la tabla
-  empresasQ: '',
-  empresasEstado: '', // filtro por estado lead en la tabla de empresas
-  fichaTab: 'notas', // pestaña de la columna central de la ficha: notas, tareas, whatsapp, correo
-  tareasVista: 'bandeja',
-  tareasQ: '',
-  editor: null, // editor de tarea abierto: { clave, fecha }
-  contactoActual: null,
-  notaFiltro: '',
-  notasContactoQ: '',
-  notasAbiertas: new Set(), // notas desplegadas
-  datosAbiertos: false, // desplegable "Datos" de la ficha
-  enfocarTarea: false,
-  cola: null, // secuencia en curso: { ids, i, origen, hechas, saltadas }
-  listasNuevas: new Set(), // listas de tareas generales creadas que aún no tienen tareas
-  colaNotas: {}, // nota rápida que se está escribiendo en cada tarea de la secuencia
-  llamada: null, // ventana de llamada: { contactId, taskId, telefono, inicio, duracion, resultado, notas, minimizada }
-  llamadaCerrada: null, // tarea cuya ventana de llamada se cerró a mano (no se vuelve a abrir sola)
-  tareaDestacada: null, // tarea a resaltar al abrir la ficha del contacto desde Tareas
-};
-
-const app = document.getElementById('app');
-const modal = document.getElementById('modal');
-const $ = (sel, raiz = document) => raiz.querySelector(sel);
-
-// ---------- Utilidades ----------
-
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-const ahora = () => new Date().toISOString();
-
-// ---------- Iconos propios: trazo fino, siempre del mismo color ----------
-
-const ICONOS = {
-  telefono: '<path d="M5.6 2.5H3.8c-.7 0-1.3.6-1.2 1.3.5 4.8 4.3 8.6 9.1 9.1.7.1 1.3-.5 1.3-1.2v-1.8l-2.6-1-1.3 1.3A8 8 0 0 1 5.3 6.4L6.6 5z"/>',
-  'telefono-x': '<path d="M5.6 2.5H3.8c-.7 0-1.3.6-1.2 1.3.5 4.8 4.3 8.6 9.1 9.1.7.1 1.3-.5 1.3-1.2v-1.8l-2.6-1-1.3 1.3A8 8 0 0 1 5.3 6.4L6.6 5z"/><path d="m10 2.5 3 3m0-3-3 3"/>',
-  chat: '<path d="M3 13V5a2.5 2.5 0 0 1 2.5-2.5h5A2.5 2.5 0 0 1 13 5v3a2.5 2.5 0 0 1-2.5 2.5H6z"/>',
-  correo: '<rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/>',
-  video: '<rect x="1.5" y="4" width="9" height="8" rx="1.5"/><path d="m10.5 7 4-2v6l-4-2"/>',
-  reunion: '<circle cx="6" cy="5.5" r="2.2"/><path d="M2 13c.4-2.3 2-3.5 4-3.5s3.6 1.2 4 3.5"/><circle cx="11.5" cy="6" r="1.7"/><path d="M11 9.6c1.6 0 2.8 1 3.1 2.9"/>',
-  cancelado: '<circle cx="8" cy="8" r="5.5"/><path d="m4.1 4.1 7.8 7.8"/>',
-  documento: '<path d="M4 1.8h5l3 3V14H4z"/><path d="M9 1.8v3h3M6 8h4M6 10.5h4"/>',
-  pin: '<path d="M6 2h4l-.5 4 2 2.5h-7l2-2.5z"/><path d="M8 8.5V14"/>',
-  nota: '<rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>',
-  editar: '<path d="M3 13h2.5L13 5.5 10.5 3 3 10.5z"/><path d="m9.5 4 2.5 2.5"/>',
-  idea: '<path d="M6 12h4M6.5 14h3"/><path d="M5 9.5a4 4 0 1 1 6 0c-.6.6-1 1.2-1 2H6c0-.8-.4-1.4-1-2z"/>',
-  enlace: '<path d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2A2.5 2.5 0 0 0 9 3.5l-.8.8"/><path d="M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.5l.8-.8"/>',
-  reloj: '<circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/>',
-  calendario: '<rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.8v2.4M10.5 1.8v2.4"/>',
-  persona: '<circle cx="8" cy="5.5" r="2.5"/><path d="M3 14c.5-3 2.5-4.5 5-4.5s4.5 1.5 5 4.5"/>',
-  check: '<path d="m3 8.5 3 3 7-7"/>',
-  'check-circulo': '<circle cx="8" cy="8" r="6"/><path d="m5.3 8.2 1.9 1.9 3.6-3.8"/>',
-  bandeja: '<path d="M2 9h3.5l1 2h3l1-2H14"/><path d="M2 9l2-5.5h8L14 9v4.5H2z"/>',
-  sol: '<circle cx="8" cy="8" r="2.8"/><path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/>',
-  sofa: '<path d="M2.5 7.5H4V10h8V7.5h1.5V12h-11zM4 7.5V5h8v2.5M3.5 12v1.5M12.5 12v1.5"/>',
-  flecha: '<path d="M3 8h10M9 4l4 4-4 4"/>',
-  lista: '<path d="M6 4.5h7M6 8h7M6 11.5h7M3 4.5h.01M3 8h.01M3 11.5h.01"/>',
-  bandera: '<path d="M3.5 14V2.5M3.5 3h8L10 6l1.5 3h-8"/>',
-  rayo: '<path d="M9 1.5 3.5 9H8l-1 5.5L12.5 7H8z"/>',
-  expandir: '<path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/>',
-  papelera: '<path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.5 6.5V11M9.5 6.5V11"/>',
-  cerrar: '<path d="m4 4 8 8m0-8-8 8"/>',
-  puntos: '<circle cx="3.5" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.1" fill="currentColor" stroke="none"/>',
-  play: '<path d="M5 3.5v9l7-4.5z"/>',
-  mas: '<path d="M8 3v10M3 8h10"/>',
-  empresa: '<rect x="2.5" y="2" width="7" height="12" rx="1"/><path d="M9.5 6h3a1 1 0 0 1 1 1v7h-4M5 5h2M5 8h2M5 11h2"/>',
-  secuencia: '<circle cx="3.5" cy="4" r="1.5"/><circle cx="3.5" cy="12" r="1.5"/><path d="M3.5 5.5v5M7 4h6.5M7 12h6.5M7 8h4"/>',
-  ajustes: '<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.7M8 12.5v1.7M1.8 8h1.7M12.5 8h1.7M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M3.6 12.4l1.2-1.2M11.2 4.8l1.2-1.2"/>',
-  subir: '<path d="m4 10 4-4 4 4"/>',
-  bajar: '<path d="m4 6 4 4 4-4"/>',
-  buscar: '<circle cx="7" cy="7" r="4.5"/><path d="m10.4 10.4 3.3 3.3"/>',
-  filtro: '<path d="M2.5 3h11L9.3 8v4.6l-2.6 1.2V8z"/>',
-  importar: '<path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11v2.5h11V11"/>',
-};
-
-const ico = (nombre) => `<svg class="ico" viewBox="0 0 16 16" aria-hidden="true">${ICONOS[nombre] || ''}</svg>`;
-const pad = (n) => String(n).padStart(2, '0');
-const isoLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
 // ---------- Zonas horarias ----------
-
-function partesEn(zona, d = new Date()) {
-  const f = new Intl.DateTimeFormat('en-GB', {
-    timeZone: zona, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  });
-  return Object.fromEntries(f.formatToParts(d).map((p) => [p.type, p.value]));
-}
-
-const hoy = () => { const p = partesEn(ZONA); return `${p.year}-${p.month}-${p.day}`; };
-const horaActual = (zona = ZONA) => { const p = partesEn(zona); return `${p.hour}:${p.minute}`; };
-
-// Minutos que la zona va por delante de UTC en ese instante (tiene en cuenta el horario de verano).
-function desfase(zona, d) {
-  const p = partesEn(zona, d);
-  return (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - Math.floor(d.getTime() / 60000) * 60000) / 60000;
-}
-
-// "18:00" en España ese día → "01:00 +1" en Malasia.
-function horaLocal(hhmm, fecha = hoy(), conDia = true) {
-  if (!hhmm) return '';
-  const [y, m, d] = fecha.split('-').map(Number);
-  const [h, mi] = hhmm.split(':').map(Number);
-  const comoUtc = Date.UTC(y, m - 1, d, h, mi);
-  const p = partesEn(zonaSecundaria().id, new Date(comoUtc - desfase(ZONA, new Date(comoUtc)) * 60000));
-  const dia = `${p.year}-${p.month}-${p.day}`;
-  const marca = !conDia || dia === fecha ? '' : dia > fecha ? ' +1' : ' −1';
-  return `${p.hour}:${p.minute}${marca}`;
-}
 
 // Hora secundaria entre paréntesis (nada si está desactivada en Ajustes).
 const enLocal = (texto) => {
   const z = zonaSecundaria();
   return z ? `<span class="local" title="Hora de ${z.label}">(${texto} ${z.sufijo})</span>` : '';
 };
-const conLocal = (hhmm, fecha) => (hhmm ? `${hhmm} ${zonaSecundaria() ? enLocal(horaLocal(hhmm, fecha)) : ''}`.trim() : '');
-
-function sumarDias(iso, n) {
-  const d = new Date(iso + 'T00:00:00');
-  d.setDate(d.getDate() + n);
-  return isoLocal(d);
-}
-
-function fmtFecha(iso) {
-  if (!iso) return '';
-  const d = new Date(iso.length === 10 ? iso + 'T00:00:00' : iso);
-  const opts = { day: 'numeric', month: 'short' };
-  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
-  return d.toLocaleDateString('es-ES', opts);
-}
-
-function fmtRelativa(iso) {
-  if (!iso) return '';
-  const h = hoy();
-  if (iso === h) return 'Hoy';
-  if (iso === sumarDias(h, 1)) return 'Mañana';
-  if (iso === sumarDias(h, -1)) return 'Ayer';
-  return fmtFecha(iso);
-}
-
-const diaSemana = (iso, weekday = 'long') => new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', { weekday });
-const mayuscula = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-
-// Fecha de una tarea como en Todoist: Hoy, Mañana, el día de la semana si es esta semana, o la fecha.
-function fmtCuando(iso) {
-  const h = hoy();
-  if (iso > sumarDias(h, 1) && iso <= sumarDias(h, 6)) return mayuscula(diaSemana(iso));
-  return fmtRelativa(iso);
-}
-
-// Color de la fecha (como Todoist): vencida, hoy, mañana, esta semana o más adelante.
-function claseFecha(iso) {
-  const h = hoy();
-  if (iso < h) return 'f-vencida';
-  if (iso === h) return 'f-hoy';
-  if (iso === sumarDias(h, 1)) return 'f-manana';
-  return iso <= sumarDias(h, 6) ? 'f-semana' : 'f-lejos';
-}
-
-// Cabecera de cada día: "3 nov · Hoy · martes".
-function tituloDia(iso) {
-  const rel = fmtRelativa(iso);
-  return [fmtFecha(iso), rel !== fmtFecha(iso) ? rel : '', diaSemana(iso)].filter(Boolean).join(' · ');
-}
+const conLocal = (hhmm, fecha) => (hhmm ? `${hhmm} ${zonaSecundaria() ? enLocal(horaLocal(hhmm, fecha, true, zonaSecundaria().id)) : ''}`.trim() : '');
 
 const estadoDe = (id) => ESTADOS.find((e) => e.id === id) || ESTADOS[0];
 const tipoDe = (id) => TIPOS_NOTA.find((t) => t.id === id) || TIPOS_NOTA[TIPOS_NOTA.length - 1];
@@ -385,9 +239,6 @@ const notasDe = (id) => db.notes.filter((n) => n.contactId === id).sort(ordenNot
 const accionesDe = (id) =>
   db.actions.filter((a) => a.contactId === id)
     .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.hora || '').localeCompare(a.hora || '') || (b.creado || '').localeCompare(a.creado || ''));
-
-const iniciales = (nombre) =>
-  (nombre || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
 
 function tocar(contactId) {
   const c = contacto(contactId);
@@ -473,140 +324,11 @@ function inputProp(p, valor) {
 // Las propiedades de nurturing de la empresa, si está en nurturing (para la ficha del contacto).
 const nurturingDe = (e) => (e && esNurturing(e.estadoLead) ? NURTURING_REASONS.find((r) => r.id === e.nurturingReason)?.label || '' : '');
 
-const campo = (label, input, clase = '') => `<label class="field ${clase}"><span>${label}</span>${input}</label>`;
-const opciones = (lista, sel) =>
-  lista.map((o) => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
 const selectEstado = (c) =>
   `<span class="estado" style="--c:${estadoDe(c.estado).color}"><select class="estado-select" data-id="${c.id}">${opciones(ESTADOS, c.estado)}</select></span>`;
 const ICONO_CAL = ico('calendario');
 
-// ---------- Fechas con atajos (mañana, en 3 días, la semana que viene…) ----------
-
-const ATAJOS_FECHA = [
-  ['hoy', 'Hoy'], ['manana', 'Mañana'], ['2', 'En 2 días'], ['3', 'En 3 días'], ['lunes', 'El próximo lunes'],
-  ['semana', 'La semana que viene'], ['2semanas', 'En 2 semanas'], ['mes', 'En un mes'], ['sin', 'Sin fecha'],
-];
-
-// Próximo día de la semana (0 = domingo). Si hoy es ese día, el de la semana siguiente salvo con `incluirHoy`.
-function proximoDia(dia, incluirHoy = false) {
-  const h = hoy();
-  const dif = (dia - new Date(h + 'T00:00:00').getDay() + 7) % 7;
-  return sumarDias(h, dif === 0 && !incluirHoy ? 7 : dif);
-}
-
-function sumarMeses(iso, n) {
-  const d = new Date(iso + 'T00:00:00');
-  d.setMonth(d.getMonth() + n);
-  return isoLocal(d);
-}
-
-function fechaAtajo(id) {
-  const h = hoy();
-  const dias = { hoy: 0, manana: 1, 2: 2, 3: 3, semana: 7, '2semanas': 14 }[id];
-  if (dias !== undefined) return sumarDias(h, dias);
-  if (id === 'lunes') return proximoDia(1);
-  if (id === 'finde') return proximoDia(6, true);
-  if (id === 'mes') return sumarMeses(h, 1);
-  return '';
-}
-
-const campoFecha = (nombre, valor, extra = '') => `
-  <span class="fecha-campo">
-    <input type="date" name="${nombre}" value="${esc(valor || '')}" ${extra}>
-    <select class="fecha-atajos" data-fecha-atajo title="Atajos de fecha" aria-label="Atajos de fecha">
-      <option value="">▾</option>
-      ${ATAJOS_FECHA.map(([id, label]) => `<option value="${id}">${label}</option>`).join('')}
-    </select>
-  </span>`;
-
-document.addEventListener('change', (e) => {
-  if (!e.target.matches('[data-fecha-atajo]')) return;
-  const sel = e.target;
-  const input = sel.parentElement.querySelector('input[type=date]');
-  if (sel.value) {
-    input.value = fechaAtajo(sel.value);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-  sel.value = '';
-});
-
 // ---------- Fechas en el título, como en Todoist ("Llamar a Ana mañana a las 17") ----------
-
-// \b no reconoce la ñ ni las tildes como letras: se usan estos límites de palabra.
-const reNlp = (fuente) => new RegExp(`(?<![\\p{L}\\d])${fuente}(?![\\p{L}\\d])`, 'giu');
-const DIAS_RE = ['domingo', 'lunes', 'martes', 'mi[eé]rcoles', 'jueves', 'viernes', 's[aá]bado'];
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-const NUMEROS = { un: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
-
-function fechaDe(dia, mes, anio) {
-  const h = hoy();
-  const y = anio ? (anio.length === 2 ? 2000 + +anio : +anio) : +h.slice(0, 4);
-  let iso = `${y}-${pad(mes)}-${pad(dia)}`;
-  if (!anio && iso < h) iso = `${y + 1}-${pad(mes)}-${pad(dia)}`; // "15/1" en noviembre es el del año que viene
-  return isoLocal(new Date(iso + 'T00:00:00')) === iso ? iso : null;
-}
-
-const horaDe = (h, m = 0) => (h <= 23 && m <= 59 ? `${pad(h)}:${pad(m)}` : null);
-
-const PATRONES_FECHA = [
-  [reNlp('pasado ma[nñ]ana'), () => sumarDias(hoy(), 2)],
-  [reNlp('(?<!(?:por|de|a) la )ma[nñ]ana'), () => sumarDias(hoy(), 1)], // "por la mañana" no es una fecha
-  [reNlp('hoy'), () => hoy()],
-  [reNlp('(?:la )?(?:semana que viene|pr[oó]xima semana|semana pr[oó]xima)'), () => proximoDia(1)],
-  [reNlp('(?:el )?(?:mes que viene|pr[oó]ximo mes)'), () => sumarMeses(hoy(), 1)],
-  [reNlp('(?:este )?fin de semana'), () => proximoDia(6, true)],
-  [reNlp(`(?:el )?(?:pr[oó]ximo )?(${DIAS_RE.join('|')})(?: que viene)?`),
-    (m) => proximoDia(DIAS_RE.findIndex((d) => new RegExp(`^${d}$`, 'iu').test(m[1])))],
-  [reNlp(`en (\\d+|${Object.keys(NUMEROS).join('|')}) (d[ií]as?|semanas?|mes(?:es)?)`), (m) => {
-    const n = +m[1] || NUMEROS[m[1].toLowerCase()];
-    const u = m[2].toLowerCase();
-    return u.startsWith('mes') ? sumarMeses(hoy(), n) : sumarDias(hoy(), u.startsWith('sem') ? n * 7 : n);
-  }],
-  [reNlp('(?:el )?(\\d{1,2})/(\\d{1,2})(?:/(\\d{4}|\\d{2}))?'), (m) => fechaDe(+m[1], +m[2], m[3])],
-  [reNlp(`(?:el )?(\\d{1,2}) de (${MESES.join('|')})(?: de (\\d{4}))?`), (m) => fechaDe(+m[1], MESES.indexOf(m[2].toLowerCase()) + 1, m[3])],
-];
-
-const A_LAS = '(?:a las? |sobre las? )';
-const PATRONES_HORA = [
-  [reNlp(`${A_LAS}?(\\d{1,2})[:.](\\d{2})(?: ?h)?`), (m) => horaDe(+m[1], +m[2])],
-  [reNlp(`${A_LAS}?(\\d{1,2})(?::(\\d{2}))? ?([ap])\\.?m\\.?`), (m) => horaDe((+m[1] % 12) + (m[3].toLowerCase() === 'p' ? 12 : 0), +(m[2] || 0))],
-  [reNlp(`${A_LAS}(\\d{1,2})(?: ?h)?(?: de la (ma[nñ]ana|tarde|noche))?`), (m) => {
-    let h = +m[1];
-    if (m[2] ? !/^ma/i.test(m[2]) && h < 12 : h >= 1 && h <= 7) h += 12; // "a las 5" → 17:00
-    return horaDe(h);
-  }],
-  [reNlp('(\\d{1,2}) ?h'), (m) => (+m[1] >= 7 ? horaDe(+m[1]) : null)], // "17h" (no "2h", que suele ser duración)
-];
-
-// Busca una fecha y una hora en el texto. Devuelve los valores y dónde está cada trozo reconocido.
-function analizarFechas(texto) {
-  const res = { fecha: null, hora: null, rangos: [] };
-  const libre = (ini, fin) => res.rangos.every((r) => fin <= r.ini || ini >= r.fin);
-  const buscar = (patrones, tipo) => {
-    for (const [patron, valor] of patrones) {
-      for (const m of texto.matchAll(patron)) {
-        const v = valor(m);
-        const fin = m.index + m[0].length;
-        if (v && libre(m.index, fin)) {
-          res[tipo] = v;
-          res.rangos.push({ ini: m.index, fin, tipo });
-          return;
-        }
-      }
-    }
-  };
-  buscar(PATRONES_HORA, 'hora');
-  buscar(PATRONES_FECHA, 'fecha');
-  return res;
-}
-
-function quitarRangos(texto, rangos) {
-  let t = texto;
-  [...rangos].sort((a, b) => b.ini - a.ini).forEach((r) => (t = t.slice(0, r.ini) + ' ' + t.slice(r.fin)));
-  t = t.replace(/\s{2,}/g, ' ').replace(/\s+([,.;:])/g, '$1').replace(/^[\s,.;:–-]+|[\s,;:–-]+$/g, '');
-  return /^\p{Lu}/u.test(texto) ? mayuscula(t) : t; // "Hoy, llamar a Luis" → "Llamar a Luis"
-}
 
 // Campo de título que reconoce fechas: el texto reconocido se resalta (con un "espejo" detrás del input)
 // y al guardar se quita del título.
@@ -682,25 +404,6 @@ function tituloLimpio(input) {
 }
 
 // ---------- Tipo de tarea según el título ("Llamar a Ana" → llamada, "Enviar mail" → email…) ----------
-
-const PALABRAS_ACCION = [
-  ['videollamada', 'videollamad\\p{L}*|v[ií]deo ?llamad\\p{L}*|videoconferencias?|zoom|meet|teams'],
-  ['llamada', 'll[aá]m\\p{L}*|telefonear'],
-  ['reunion', 'reuni[oó]n|reuniones|reunir\\p{L}*|quedar con|visitar?'],
-  ['email', 'correos?|e-?mails?|mails?'],
-  ['whatsapp', 'whats?app|wasap|whatsap|wsp'],
-  ['propuesta', 'propuestas?|presupuestos?'],
-].map(([id, fuente]) => [id, new RegExp(`(?<![\\p{L}\\d])(?:${fuente})(?![\\p{L}\\d])`, 'iu')]);
-
-// Si hay varias palabras, manda la que aparece antes ("Llamar para fijar reunión" → llamada).
-function accionDeTitulo(texto) {
-  let mejor = null;
-  for (const [id, re] of PALABRAS_ACCION) {
-    const m = texto.match(re);
-    if (m && (!mejor || m.index < mejor.pos)) mejor = { id, pos: m.index };
-  }
-  return mejor?.id || '';
-}
 
 // Mientras se escribe el título, el tipo de acción lo sigue. Si se elige a mano, ya no se toca.
 document.addEventListener('input', (e) => {
@@ -786,6 +489,8 @@ function pintarChipFecha(form) {
   chip.className = `td-chip td-chip-fecha ${f ? claseFecha(f) : ''}`;
   chip.innerHTML = f ? `${ICONO_CAL}${fmtCuando(f)}${h ? ` ${h}` : ''}` : h ? `${ico('reloj')} ${h}` : `${ICONO_CAL}Fecha`;
 }
+
+alAbrirModal(activarTareas);
 
 function activarTareas(raiz = document) {
   activarNlp(raiz);
@@ -887,243 +592,9 @@ function modalRapido() {
   $('[name=titulo]', modal).focus();
 }
 
-// ---------- Avisos con "Deshacer" ----------
-
-const aviso = document.getElementById('aviso');
-let temporizadorAviso = null;
-
-function avisar(texto, deshacer) {
-  aviso.innerHTML = `<span>${esc(texto)}</span>${deshacer ? '<button type="button">Deshacer</button>' : ''}`;
-  aviso.hidden = false;
-  aviso.querySelector('button')?.addEventListener('click', () => {
-    aviso.hidden = true;
-    deshacer();
-  });
-  clearTimeout(temporizadorAviso);
-  temporizadorAviso = setTimeout(() => (aviso.hidden = true), 6000);
-}
-
-// ---------- Markdown (negrita, listas con sangría y enlaces) ----------
-
-function mdInline(s) {
-  // `s` ya viene escapado: solo se añaden etiquetas propias.
-  return s
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    .replace(/(^|[\s(])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-}
-
-function markdown(texto) {
-  const lineas = esc(texto).replace(/\t/g, '  ').split('\n');
-  let html = '';
-  let parrafo = [];
-  const pila = []; // listas abiertas: { tipo: 'ul' | 'ol', sangria }
-
-  const cerrarParrafo = () => {
-    if (parrafo.length) html += `<p>${parrafo.map(mdInline).join('<br>')}</p>`;
-    parrafo = [];
-  };
-  const cerrarListas = (hasta = -1) => {
-    while (pila.length && pila[pila.length - 1].sangria > hasta) html += `</li></${pila.pop().tipo}>`;
-  };
-  const abrirLista = (tipo, sangria, num) => {
-    const inicio = tipo === 'ol' && num > 1 ? ` start="${num}"` : '';
-    html += `<${tipo}${inicio}><li>`;
-    pila.push({ tipo, sangria });
-  };
-
-  for (const linea of lineas) {
-    const m = linea.match(/^(\s*)([-*•]|(\d+)[.)])\s+(.*)$/);
-    if (m) {
-      cerrarParrafo();
-      const sangria = m[1].length;
-      const tipo = m[3] ? 'ol' : 'ul';
-      const cima = pila[pila.length - 1];
-      if (!cima || sangria > cima.sangria) {
-        abrirLista(tipo, sangria, +m[3]);
-      } else {
-        cerrarListas(sangria);
-        const actual = pila[pila.length - 1];
-        if (!actual) abrirLista(tipo, sangria, +m[3]);
-        else if (actual.tipo !== tipo && actual.sangria === sangria) {
-          html += `</li></${pila.pop().tipo}>`;
-          abrirLista(tipo, sangria, +m[3]);
-        } else html += '</li><li>';
-      }
-      html += mdInline(m[4]);
-    } else if (!linea.trim()) {
-      cerrarParrafo();
-      cerrarListas();
-    } else if (pila.length && /^\s+/.test(linea)) {
-      html += '<br>' + mdInline(linea.trim()); // continuación de un punto de la lista
-    } else {
-      cerrarListas();
-      parrafo.push(linea);
-    }
-  }
-  cerrarParrafo();
-  cerrarListas();
-  return html;
-}
-
-// Editor de notas: al pulsar Enter en una lista añade el siguiente guion/número; Tab y Mayús+Tab cambian la sangría.
-const LISTA_RE = /^(\s*)([-*•]|(\d+)([.)]))\s(.*)$/;
-
-function activarEditores(raiz = document) {
-  raiz.querySelectorAll('textarea[data-md]:not([data-md-on])').forEach((ta) => {
-    ta.dataset.mdOn = '1';
-    ta.addEventListener('keydown', (e) => teclaEditor(ta, e));
-  });
-}
-
-function teclaEditor(ta, e) {
-  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && ['b', 'k'].includes(e.key.toLowerCase())) {
-    e.preventDefault();
-    comandoEditor(ta, e.key.toLowerCase() === 'b' ? 'negrita' : 'enlace');
-    return;
-  }
-  if (e.key === 'Escape' && ta.closest('.editor.completa') && !ta.closest('dialog')) {
-    e.preventDefault();
-    e.stopPropagation();
-    comandoEditor(ta, 'pantalla');
-    return;
-  }
-  const { selectionStart: ini, selectionEnd: fin, value } = ta;
-  const inicioLinea = value.lastIndexOf('\n', ini - 1) + 1;
-  const finLinea = value.indexOf('\n', ini) === -1 ? value.length : value.indexOf('\n', ini);
-  const m = value.slice(inicioLinea, finLinea).match(LISTA_RE);
-
-  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.isComposing && ini === fin && m) {
-    e.preventDefault();
-    if (!m[5].trim() && ini === finLinea) {
-      ta.setRangeText('', inicioLinea, finLinea, 'end'); // punto vacío: se cierra la lista
-    } else {
-      const marca = m[3] ? `${+m[3] + 1}${m[4]}` : m[2];
-      ta.setRangeText(`\n${m[1]}${marca} `, ini, fin, 'end');
-    }
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
-  } else if (e.key === 'Tab' && m) {
-    e.preventDefault();
-    if (e.shiftKey) {
-      const quitar = Math.min(2, m[1].length);
-      if (!quitar) return;
-      ta.setRangeText('', inicioLinea, inicioLinea + quitar, 'preserve');
-      ta.setSelectionRange(ini - quitar, fin - quitar);
-    } else {
-      ta.setRangeText('  ', inicioLinea, inicioLinea, 'preserve');
-      ta.setSelectionRange(ini + 2, fin + 2);
-    }
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-}
-
-const barraEditor = () => `
-  <div class="md-barra">
-    <button type="button" data-md-cmd="negrita" title="Negrita (Ctrl+B)"><b>B</b></button>
-    <button type="button" data-md-cmd="lista" title="Lista con guiones">• Lista</button>
-    <button type="button" data-md-cmd="numerada" title="Lista numerada">1. Lista</button>
-    <button type="button" data-md-cmd="enlace" title="Enlace (Ctrl+K)">${ico('enlace')} Enlace</button>
-    <span class="md-ayuda">Ctrl+B negrita · Ctrl+K enlace · Enter continúa la lista · Tab la sangra</span>
-    <button type="button" class="md-pantalla" data-md-cmd="pantalla" title="Pantalla completa (Esc para salir)">${ico('expandir')}</button>
-  </div>`;
-
-const editorHTML = (nombre, valor, filas, placeholder) => `
-  <div class="editor">
-    ${barraEditor()}
-    <textarea name="${nombre}" rows="${filas}" data-md placeholder="${esc(placeholder)}">${esc(valor)}</textarea>
-  </div>`;
-
-function comandoEditor(ta, cmd) {
-  const editor = ta.closest('.editor');
-  if (cmd === 'pantalla') {
-    const completa = editor.classList.toggle('completa');
-    ajustarScroll();
-    const b = editor.querySelector('.md-pantalla');
-    b.innerHTML = completa ? `${ico('cerrar')} Salir` : ico('expandir');
-    b.title = completa ? 'Salir de pantalla completa (Esc)' : 'Pantalla completa (Esc para salir)';
-    ta.focus();
-    return;
-  }
-  const { selectionStart: ini, selectionEnd: fin, value } = ta;
-  const sel = value.slice(ini, fin);
-  const inicioLinea = value.lastIndexOf('\n', ini - 1) + 1;
-  if (cmd === 'negrita') {
-    const yaNegrita = value.slice(ini - 2, ini) === '**' && value.slice(fin, fin + 2) === '**';
-    if (yaNegrita) {
-      ta.setRangeText(sel, ini - 2, fin + 2, 'select'); // segunda pulsación: quita la negrita
-    } else {
-      ta.setRangeText(`**${sel || 'texto'}**`, ini, fin, 'end');
-      ta.setSelectionRange(ini + 2, ini + 2 + (sel || 'texto').length);
-    }
-  } else if (cmd === 'enlace') {
-    if (/^https?:\/\/\S+$/.test(sel)) {
-      // Seleccionada una URL: queda como destino y se selecciona el texto para escribirlo.
-      ta.setRangeText(`[texto](${sel})`, ini, fin, 'end');
-      ta.setSelectionRange(ini + 1, ini + 6);
-    } else {
-      ta.setRangeText(`[${sel || 'texto'}](https://)`, ini, fin, 'end');
-      ta.setSelectionRange(ta.selectionEnd - 1, ta.selectionEnd - 1);
-    }
-  } else {
-    ta.setRangeText(cmd === 'lista' ? '- ' : '1. ', inicioLinea, inicioLinea, 'end');
-  }
-  ta.focus();
-  ta.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-document.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-md-cmd]');
-  if (b) comandoEditor(b.closest('.editor').querySelector('textarea'), b.dataset.mdCmd);
-});
-
-// ---------- Guardado ----------
-
-const estadoGuardado = document.getElementById('save-status');
-let temporizadorGuardado = null;
-let cambiosPendientes = false;
-
-function setStatus(texto, tipo) {
-  estadoGuardado.textContent = texto;
-  estadoGuardado.dataset.tipo = tipo;
-}
-
-function guardar() {
-  cambiosPendientes = true;
-  setStatus('Guardando…', 'saving');
-  clearTimeout(temporizadorGuardado);
-  temporizadorGuardado = setTimeout(enviar, 250);
-}
-
-async function enviar() {
-  try {
-    const r = await fetch('/api/data', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(db),
-    });
-    if (!r.ok) throw new Error(r.statusText);
-    cambiosPendientes = false;
-    setStatus('Guardado', 'ok');
-  } catch {
-    setStatus('Error al guardar. ¿Está abierta la ventana del servidor?', 'error');
-  }
-}
-
-window.addEventListener('beforeunload', (e) => {
-  if (cambiosPendientes) {
-    e.preventDefault();
-    e.returnValue = '';
-  }
-});
-
 // ---------- Router ----------
 
-function rutaActual() {
-  const [, ruta, id] = location.hash.replace(/^#/, '').split('/');
-  return { ruta, id };
-}
-
-function render() {
+function pintarVista() {
   const { ruta, id } = rutaActual();
   if (ruta === 'hoy') { // la antigua página Hoy es ahora la vista "Hoy" de Tareas
     ui.tareasVista = 'hoy';
@@ -3047,43 +2518,6 @@ function modalPropEmpresa(p) {
 const nombresImportaciones = () =>
   [...new Set([...db.imports.map((i) => i.nombre), ...db.contacts.map((c) => c.importacion).filter(Boolean)])];
 
-// CSV con comas, punto y coma o tabuladores (se detecta solo) y comillas dobles.
-function leerCSV(texto) {
-  texto = texto.replace(/^\uFEFF/, '');
-  const primera = texto.split(/\r?\n/, 1)[0];
-  const sep = [',', ';', '\t'].reduce((a, b) => (primera.split(b).length > primera.split(a).length ? b : a));
-  const filas = [];
-  let fila = [];
-  let celda = '';
-  let comillas = false;
-  for (let i = 0; i < texto.length; i++) {
-    const ch = texto[i];
-    if (comillas) {
-      if (ch !== '"') celda += ch;
-      else if (texto[i + 1] === '"') { celda += '"'; i++; }
-      else comillas = false;
-    } else if (ch === '"') comillas = true;
-    else if (ch === sep) { fila.push(celda); celda = ''; }
-    else if (ch === '\n' || ch === '\r') {
-      if (ch === '\r' && texto[i + 1] === '\n') i++;
-      fila.push(celda);
-      filas.push(fila);
-      fila = [];
-      celda = '';
-    } else celda += ch;
-  }
-  if (celda || fila.length) { fila.push(celda); filas.push(fila); }
-  return filas.filter((f) => f.some((v) => v.trim()));
-}
-
-// Los CSV de Excel en español suelen venir en Windows-1252, no en UTF-8.
-async function leerArchivoTexto(archivo) {
-  const buf = await archivo.arrayBuffer();
-  try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch { return new TextDecoder('windows-1252').decode(buf); }
-}
-
-const normalizar = (s) => String(s ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
-
 // Campos a los que se puede llevar cada columna del CSV; `alias` sirve para adivinarlo por la cabecera.
 const CAMPOS_IMPORTAR = [
   { id: 'nombre', label: 'Nombre completo', alias: ['nombre completo', 'name', 'full name', 'contacto', 'nombre y apellidos'] },
@@ -3608,61 +3042,6 @@ function accionFuturaHTML(t) {
     </div>`;
 }
 
-// ---------- Modales ----------
-
-function abrirModal(titulo, camposHTML, alGuardar) {
-  modal.innerHTML = `
-    <form class="modal-form">
-      <h2>${esc(titulo)}</h2>
-      ${camposHTML}
-      <div class="modal-actions">
-        <button type="button" class="btn danger-ghost modal-borrar" hidden>Eliminar</button>
-        <span class="grow"></span>
-        <button type="button" class="btn" data-cerrar>Cancelar</button>
-        <button class="btn primary">Guardar</button>
-      </div>
-    </form>`;
-  const form = $('form', modal);
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const datos = Object.fromEntries(new FormData(form));
-    form.querySelectorAll('input[type=checkbox]').forEach((cb) => (datos[cb.name] = cb.checked));
-    if (alGuardar(datos) !== false) modal.close();
-  });
-  $('[data-cerrar]', modal).addEventListener('click', () => modal.close());
-  activarEditores(modal);
-  activarTareas(modal);
-  modal.showModal();
-  $('input:not([type=hidden]), textarea, select', modal)?.focus();
-}
-
-// Muestra el botón "Eliminar" del modal abierto.
-function botonBorrarModal(alBorrar) {
-  const b = $('.modal-borrar', modal);
-  b.hidden = false;
-  b.addEventListener('click', () => {
-    if (alBorrar() !== false) modal.close();
-  });
-}
-
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) modal.close();
-});
-
-// Esc con un editor a pantalla completa dentro del modal: sale de pantalla completa en vez de cerrar el modal.
-modal.addEventListener('cancel', (e) => {
-  const ta = $('.editor.completa textarea', modal);
-  if (ta) {
-    e.preventDefault();
-    comandoEditor(ta, 'pantalla');
-  }
-});
-modal.addEventListener('close', ajustarScroll);
-
-function ajustarScroll() {
-  document.body.classList.toggle('sin-scroll', !!document.querySelector('.editor.completa'));
-}
-
 // Nuevo contacto (opcionalmente ya en una empresa) o editar uno existente.
 function modalContacto(c, companyId = '') {
   const nuevo = !c;
@@ -3928,7 +3307,7 @@ function modalAccion(contactId, a) {
 
 // ---------- Acciones de la interfaz ----------
 
-const acciones = {
+Object.assign(acciones, {
   'nuevo-contacto': () => modalContacto(),
   'editar-contacto': (el) => modalContacto(contacto(el.dataset.id)),
   'abrir-contacto': (el) => { location.hash = '#/contacto/' + el.dataset.id; },
@@ -4193,15 +3572,6 @@ const acciones = {
     const a = accion(el.dataset.id);
     modalAccion(a.contactId, a);
   },
-};
-
-app.addEventListener('click', (e) => {
-  const el = e.target.closest('[data-action]');
-  if (!el) return;
-  // Un enlace, select o botón dentro de un elemento clicable (p. ej. una fila) hace lo suyo, no abre la fila.
-  const interactivo = e.target.closest('a, select, input, textarea, button, label');
-  if (interactivo && interactivo !== el && el.contains(interactivo)) return;
-  acciones[el.dataset.action]?.(el, e);
 });
 
 app.addEventListener('change', (e) => {
@@ -4243,6 +3613,8 @@ function migrar() {
 
 // ---------- Arranque ----------
 
+definirRender(pintarVista);
+
 window.addEventListener('hashchange', () => {
   ui.editor = null;
   render();
@@ -4252,11 +3624,12 @@ window.addEventListener('hashchange', () => {
 // Cada minuto se actualizan el reloj y los contadores del menú.
 setInterval(actualizarBadges, 60 * 1000);
 
-(async function iniciar() {
+// Carga los datos del servidor, completa lo que falte (datos de versiones anteriores) y pinta.
+export async function iniciar() {
   try {
     const r = await fetch('/api/data');
     if (!r.ok) throw new Error((await r.json()).error || r.statusText);
-    db = await r.json();
+    setDb(await r.json());
   } catch (err) {
     app.innerHTML = `<div class="empty card"><p><strong>No se pudieron cargar los datos.</strong></p><p class="muted">${esc(err.message)}</p></div>`;
     return;
@@ -4277,4 +3650,4 @@ setInterval(actualizarBadges, 60 * 1000);
   db.settings.propsEmpresaExtra ||= [];
   migrar();
   render();
-})();
+}

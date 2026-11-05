@@ -12,6 +12,9 @@ const DATOS = path.join(TMP, 'data.json');
 /** Lo que el servidor tiene guardado ahora mismo (después de esperar a que el CRM guarde). */
 export const datosGuardados = () => JSON.parse(fs.readFileSync(DATOS, 'utf8'));
 
+/** Sustituye los datos de prueba (antes de abrir la página). @param {unknown} datos */
+export const escribirDatos = (datos) => fs.writeFileSync(DATOS, JSON.stringify(datos));
+
 /**
  * Espera a que el CRM termine de guardar. El CRM guarda 250 ms después del último cambio y el indicador
  * puede decir «Guardado» por un guardado anterior mientras otro sigue pendiente: por eso se espera a que

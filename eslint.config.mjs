@@ -5,17 +5,17 @@ export default [
   { ignores: ['node_modules/', 'backups/', 'test-results/', 'playwright-report/', 'tests/.tmp/'] },
   js.configs.recommended,
   {
-    // Servidor (CommonJS, Node)
-    files: ['server.js'],
-    languageOptions: { sourceType: 'commonjs', globals: globals.node },
+    // Cliente: módulos ES en el navegador
+    files: ['src/**/*.js'],
+    languageOptions: { sourceType: 'module', globals: globals.browser },
   },
   {
-    // Cliente: un script clásico en el navegador
-    files: ['public/**/*.js'],
-    languageOptions: { sourceType: 'script', globals: globals.browser },
+    // Servidor: módulos ES en Node
+    files: ['server.js', 'src/server/**/*.js'],
+    languageOptions: { sourceType: 'module', globals: globals.node },
   },
   {
-    // Configuración y tests (módulos ES en Node)
+    // Configuración y tests (módulos ES en Node; los E2E también ejecutan código en el navegador)
     files: ['**/*.mjs'],
     languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser } },
   },

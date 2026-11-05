@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "CRM personal: contactos, notas y tareas",
+  "type": "module",
   "scripts": {
     "start": "node server.js --open",
     "typecheck": "tsc -p jsconfig.json",

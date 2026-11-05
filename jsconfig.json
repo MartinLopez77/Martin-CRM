@@ -1,6 +1,6 @@
 {
   // Comprobación de tipos del JavaScript con JSDoc (no genera archivos: la app no se compila).
-  // El código antiguo (public/app.js) entra aquí a medida que se migra a src/.
+  // src/legacy.js (el código aún sin migrar) lleva @ts-nocheck hasta que desaparezca.
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
@@ -17,5 +17,5 @@
     "skipLibCheck": true,
     "maxNodeModuleJsDepth": 0
   },
-  "include": ["tests/**/*.mjs", "playwright.config.mjs", "eslint.config.mjs"]
+  "include": ["src/**/*.js", "server.js", "tests/**/*.mjs", "playwright.config.mjs", "eslint.config.mjs"]
 }
