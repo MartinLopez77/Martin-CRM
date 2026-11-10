@@ -5,7 +5,6 @@
 .sq-progreso { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .sq-barra { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
 .sq-barra i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
-.btn:disabled { opacity: .45; cursor: default; background: var(--surface); }
 
 .sq-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
 .sq-grid-fin { grid-template-columns: minmax(0, 640px); justify-content: center; }
@@ -26,7 +25,7 @@
 
 .sq-fin-icono { font-size: 38px; }
 .sq-fin-botones { justify-content: center; margin-top: 12px; }
-.sq-cabecera .link-btn.back { margin: 0; color: var(--muted); font-weight: 500; }
+.sq-cabecera .link-btn.back { margin: 0; color: var(--muted); font-weight: 600; }
 
 /* La tarea en curso encima de la ficha del contacto («Tarea 2 de 10») */
 .cola-ficha { margin-bottom: 18px; }

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect, datosGuardados, esperarGuardado } from './helpers.mjs';
 
 test('ventana de llamada: arrastrar, minimizar y registrar', async ({ page }) => {
@@ -27,6 +29,9 @@ test('ventana de llamada: arrastrar, minimizar y registrar', async ({ page }) =>
   await expect(ventana).toHaveClass(/minimizada/);
   await cabecera.click({ position: { x: 60, y: 15 } });
 
+  // Sin resultado no se puede registrar: viene en «Sin completar»
+  await expect(ventana.locator('[name="ll-resultado"]')).toHaveValue('');
+  await expect(ventana.getByRole('button', { name: 'Registrar llamada' })).toBeDisabled();
   await ventana.locator('[name="ll-resultado"]').selectOption('sin-respuesta');
   await ventana.locator('[name="ll-notas"]').fill('Volver a llamar el lunes');
   await ventana.getByRole('button', { name: 'Registrar llamada' }).click();
@@ -36,6 +41,68 @@ test('ventana de llamada: arrastrar, minimizar y registrar', async ({ page }) =>
   const d = datosGuardados();
   expect(d.actions.some((/** @type {any} */ a) => a.contactId === 'c-carla' && a.tipo === 'llamada-sin-respuesta')).toBe(true);
   expect(d.notes.some((/** @type {any} */ n) => n.contactId === 'c-carla' && n.contenido === 'Volver a llamar el lunes')).toBe(true);
+});
+
+test('llamada: se graba siempre, una sola llamada por ventana y no se cierra sin resultado', async ({ page }) => {
+  page.on('dialog', (dl) => dl.accept());
+  await page.goto('/#/contacto/c-carla');
+  // El enlace tel: no se abre de verdad: Chrome mostraría su diálogo de «abrir la app» y se tragaría los clics.
+  // Se cancela después de que la ventana de llamada lo haya atendido.
+  await page.evaluate(() => document.addEventListener('click', (e) => {
+    if (/** @type {Element} */ (e.target).closest('a[href^="tel:"]')) e.preventDefault();
+  }));
+  await page.getByRole('button', { name: 'Llamar' }).click();
+  const ventana = page.locator('#llamada');
+
+  // La ventana es cuadrada; arriba solo «Llamada» y, bajo el nombre, la empresa (sin el cargo)
+  const caja = /** @type {{ width: number, height: number }} */ (await ventana.boundingBox());
+  expect(Math.abs(caja.width - caja.height)).toBeLessThanOrEqual(2);
+  await expect(ventana.locator('.ll-cabecera')).not.toContainText('Carla');
+  await expect(ventana.locator('.persona')).toContainText('Clínica Luz');
+  await expect(ventana.locator('.persona')).not.toContainText('Recepción');
+  await expect(ventana.locator('[name="ll-grabar"]')).toHaveCount(0); // no hay casilla: se graba siempre
+
+  await ventana.getByRole('link', { name: 'Llamar' }).click();
+  await expect(ventana.locator('.ll-grabando')).toContainText('Grabando solo tu voz'); // sin «Mezcla estéreo» en el test
+  await page.waitForTimeout(1500);
+  await ventana.getByRole('button', { name: 'Colgar' }).click();
+  await expect(ventana.locator('.ll-grabando')).toContainText('Llamada grabada');
+
+  // Después de colgar: «Llamar» apagado y la ventana no se quita sin elegir el resultado
+  await expect(ventana.locator('.ll-cabecera')).toContainText('Llamada terminada');
+  await expect(ventana.getByRole('button', { name: 'Llamar' })).toBeDisabled();
+  await expect(ventana.locator('[name="ll-resultado"]')).toHaveClass(/falta/);
+  await ventana.getByRole('button', { name: 'Cerrar' }).click();
+  await expect(ventana).toBeVisible();
+  await expect(page.locator('#aviso')).toContainText('Elige el resultado');
+  // Tampoco se abre otra llamada mientras esta no se registre
+  await page.goto('/#/contacto/c-ana');
+  await page.getByRole('button', { name: 'Llamar' }).first().click();
+  await expect(ventana.locator('.persona')).toContainText('Carla Vidal');
+
+  // Con el resultado, cerrar la registra
+  await ventana.locator('[name="ll-resultado"]').selectOption('conectada');
+  await ventana.getByRole('button', { name: 'Cerrar' }).click();
+  await expect(ventana).toBeHidden();
+
+  await page.goto('/#/contacto/c-carla');
+  const audio = page.locator('.timeline audio.tl-audio');
+  await expect(audio).toHaveCount(1);
+  await esperarGuardado(page);
+  const accion = datosGuardados().actions.find((/** @type {any} */ a) => a.contactId === 'c-carla' && a.grabacion);
+  expect(accion.resultado).toBe('conectada');
+  const archivo = path.resolve('tests/.tmp/grabaciones', `${accion.grabacion}.webm`);
+  await expect.poll(() => fs.existsSync(archivo) && fs.statSync(archivo).size).toBeGreaterThan(0);
+  // El reproductor carga el audio (y pulsarlo no abre el editor de la acción)
+  await expect.poll(() => audio.evaluate((a) => /** @type {HTMLAudioElement} */ (a).readyState)).toBeGreaterThan(0);
+  await audio.click();
+  await expect(page.locator('#modal')).toBeHidden();
+
+  // Borrar la acción borra también la grabación
+  await page.locator('.timeline .tl-cuerpo', { has: page.locator('audio') }).locator('.tl-cabecera').click();
+  await page.locator('#modal').getByRole('button', { name: /Eliminar/ }).click();
+  await expect(audio).toHaveCount(0);
+  await expect.poll(() => fs.existsSync(archivo)).toBe(false);
 });
 
 test('importar CSV: solo contactos con email válido y único, con nombre de importación', async ({ page }) => {

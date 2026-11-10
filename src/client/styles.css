@@ -36,3 +36,5 @@
 @import url('../features/settings/styles/propiedades.css');
 @import url('../features/import/styles/importar.css');
 @import url('../features/tasks/styles/vistas.css');
+@import url('../features/dashboard/styles/dashboard.css');
+@import url('../shared/styles/editar-dato.css');

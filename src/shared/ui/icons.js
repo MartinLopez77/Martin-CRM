@@ -39,6 +39,7 @@ const ICONOS = {
   subir: '<path d="m4 10 4-4 4 4"/>',
   bajar: '<path d="m4 6 4 4 4-4"/>',
   buscar: '<circle cx="7" cy="7" r="4.5"/><path d="m10.4 10.4 3.3 3.3"/>',
+  grafico: '<path d="M2.5 13.5h11"/><path d="M4.5 11V8M8 11V4.5M11.5 11V6.5"/>',
   filtro: '<path d="M2.5 3h11L9.3 8v4.6l-2.6 1.2V8z"/>',
   importar: '<path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11v2.5h11V11"/>',
 };

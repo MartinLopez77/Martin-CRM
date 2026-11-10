@@ -1,13 +1,14 @@
-// Contactos: la ficha (#/contacto/<id>) con su tarjeta, pestañas (notas, tareas, WhatsApp, correo) y acciones.
-import { HUBSPOT_ESTADOS, urlHubspot } from '../schema.js';
-import { contacto, contactoExistente, tocar } from '../store.js';
+// Contactos: la ficha (#/contacto/<id>) con su tarjeta, pestañas (notas, tareas, canales) y acciones.
+// Los datos de la tarjeta se editan pulsándolos (salvo la empresa, que relaciona el contacto con ella).
+import { CAMPOS_CONTACTO, HUBSPOT_ESTADOS, urlHubspot } from '../schema.js';
+import { contactoExistente } from '../store.js';
+import { panelCanales } from './canales.js';
 import { selectEstado } from './list.js';
 import {
   contactosDeEmpresa, empresa, empresaDe, nurturingDe, propEmpresa, propVisible,
 } from '../../companies/store.js';
 import { accionesDe } from '../../activity/store.js';
 import { accionFuturaHTML, accionHTML } from '../../activity/views.js';
-import { TIPOS_NOTA } from '../../notes/schema.js';
 import { notasDe } from '../../notes/store.js';
 import { renderNotasContacto } from '../../notes/views.js';
 import { anadirTareaHTML, editorTareaHTML } from '../../tasks/editor.js';
@@ -18,34 +19,39 @@ import { activarNotaCola, cabeceraColaHTML, prepararLlamadaCola, tareaColaHTML }
 import { inscripcionActiva, secuencia } from '../../sequences/store.js';
 import { opcionesUsuarios } from '../../team/store.js';
 import { textoProp } from '../../../shared/schema.js';
-import { fmtFecha, horaActual, hoy } from '../../../shared/lib/dates.js';
-import { ahora, esc, iniciales, plural, uid } from '../../../shared/lib/text.js';
-import { guardar } from '../../../shared/persistence.js';
-import { render, rutaActual } from '../../../shared/router.js';
+import { fmtFecha, hoy } from '../../../shared/lib/dates.js';
+import { esc, iniciales, plural } from '../../../shared/lib/text.js';
 import { db, ui } from '../../../shared/state.js';
 import { $, app } from '../../../shared/ui/dom.js';
 import { ico } from '../../../shared/ui/icons.js';
-import { avisar } from '../../../shared/ui/toast.js';
-import { dato } from '../../../shared/ui/html.js';
+import { dato, datoEditable } from '../../../shared/ui/html.js';
 import { enlaceWeb } from '../../../shared/ui/links.js';
 
 /** @typedef {import('../schema.js').Contacto} Contacto */
 
-// Pestañas de la columna central de la ficha. WhatsApp y Correo son un primer borrador: todavía no
-// están conectados, así que muestran lo registrado como acciones y abren WhatsApp o el correo para enviar.
+// Pestañas de la columna central de la ficha. Canales reúne WhatsApp y correo.
 const PESTANAS_FICHA = [
   { id: 'notas', label: 'Notas', icono: 'nota' },
   { id: 'tareas', label: 'Tareas', icono: 'check' },
-  { id: 'whatsapp', label: 'WhatsApp', icono: 'chat', borrador: true },
-  { id: 'correo', label: 'Correo', icono: 'correo', borrador: true },
+  { id: 'canales', label: 'Canales', icono: 'chat' },
 ];
+
+/**
+ * Un dato del contacto que se edita pulsándolo.
+ * @param {Contacto} c
+ * @param {string} campo id de CAMPOS_CONTACTO
+ * @param {string} valor HTML que se muestra
+ */
+function editable(c, campo, valor) {
+  const label = CAMPOS_CONTACTO.find((p) => p.id === campo)?.label || campo;
+  return datoEditable(label, valor, `data-action="editar-campo-contacto" data-id="${c.id}" data-campo="${campo}"`);
+}
 
 /** La ficha del contacto (solo se pinta si existe). @param {string} id */
 export function vistaContacto(id) {
   const c = contactoExistente(id);
   if (ui.contactoActual !== id) {
     ui.contactoActual = id;
-    ui.notaFiltro = '';
     ui.notasContactoQ = '';
   }
   if (ui.tareaDestacada) ui.fichaTab = 'tareas';
@@ -63,11 +69,11 @@ export function vistaContacto(id) {
   const pLead = propEmpresa('estadoLead');
 
   const masDatos = [
-    dato('Cargo', esc(c.cargo)),
-    dato('Web', c.web ? enlaceWeb(c.web) : ''),
-    dato('Ciudad', esc(c.ciudad)),
-    dato('Origen', esc(c.origen)),
-    dato('Etiquetas', (c.etiquetas || []).map((e) => `<span class="tag">${esc(e)}</span>`).join(' ')),
+    editable(c, 'cargo', esc(c.cargo)),
+    editable(c, 'web', c.web ? enlaceWeb(c.web) : ''),
+    editable(c, 'ciudad', esc(c.ciudad)),
+    editable(c, 'origen', esc(c.origen)),
+    editable(c, 'etiquetas', (c.etiquetas || []).map((e) => `<span class="tag">${esc(e)}</span>`).join(' ')),
     dato('Importación', c.importacion ? `<button class="link-btn" data-action="ver-importacion" data-nombre="${esc(c.importacion)}">${esc(c.importacion)}</button>` : ''),
     dato('HubSpot', c.hubspotId ? `<a href="${urlHubspot(c.hubspotId)}" target="_blank" rel="noopener">Ver en HubSpot ↗</a>${c.hubspotEstado ? `<br><span class="muted">${esc(HUBSPOT_ESTADOS[c.hubspotEstado] || c.hubspotEstado)}</span>` : ''}` : ''),
     dato('Alta', fmtFecha(c.creado)),
@@ -75,6 +81,8 @@ export function vistaContacto(id) {
 
   /** @type {Record<string, number>} */
   const cuenta = { notas: notas.length, tareas: pend.length };
+  // Las antiguas pestañas WhatsApp y Correo son ahora Canales.
+  if (ui.fichaTab === 'whatsapp' || ui.fichaTab === 'correo') { ui.canal = ui.fichaTab; ui.fichaTab = 'canales'; }
   const tab = PESTANAS_FICHA.find((p) => p.id === ui.fichaTab) || PESTANAS_FICHA[0];
 
   app.innerHTML = `
@@ -90,7 +98,7 @@ export function vistaContacto(id) {
           <div class="tc-cabecera">
             <span class="avatar lg">${esc(iniciales(c.nombre))}</span>
             <div class="grow">
-              <h1>${esc(c.nombre)}</h1>
+              <h1 class="editable" data-action="editar-campo-contacto" data-id="${c.id}" data-campo="nombre" title="Pulsa para editar el nombre">${esc(c.nombre)}</h1>
               <p class="muted small">${esc([c.cargo, empresaDe(c)].filter(Boolean).join(' · ')) || '&nbsp;'}</p>
             </div>
             <span class="td-pop-wrap">
@@ -107,10 +115,8 @@ export function vistaContacto(id) {
             <button type="button" data-action="llamar" data-id="${c.id}"><span class="tc-circulo">${ico('telefono')}</span>Llamar</button>
           </div>
           <dl class="tc-datos">
-            <dt>Email</dt>
-            <dd>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : '<span class="muted">—</span>'}</dd>
-            <dt>Teléfono</dt>
-            <dd>${c.telefono ? `<a href="tel:${esc(c.telefono)}">${esc(c.telefono)}</a>` : '<span class="muted">—</span>'}</dd>
+            ${editable(c, 'email', c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : '')}
+            ${editable(c, 'telefono', c.telefono ? `<a href="tel:${esc(c.telefono)}">${esc(c.telefono)}</a>` : '')}
             <dt>Empresa</dt>
             <dd>${emp ? `<a href="#/empresa/${c.companyId}">${esc(empresaDe(c))}</a>${contactosDeEmpresa(c.companyId).length > 1 ? ` <span class="muted small">· ${contactosDeEmpresa(c.companyId).length - 1} contacto${contactosDeEmpresa(c.companyId).length === 2 ? '' : 's'} más</span>` : ''}` : '<span class="muted">—</span>'}</dd>
             ${emp && propVisible(pLead) ? `
@@ -142,7 +148,7 @@ export function vistaContacto(id) {
         <div class="vistas-tabs ficha-tabs">
           ${PESTANAS_FICHA.map((p) => `
             <button class="vista-tab ${p.id === tab.id ? 'active' : ''}" data-action="ficha-tab" data-tab="${p.id}">
-              ${ico(p.icono)} ${p.label}${cuenta[p.id] ? ` <span class="count">${cuenta[p.id]}</span>` : ''}${p.borrador ? ' <span class="etq-borrador">Borrador</span>' : ''}
+              ${ico(p.icono)} ${p.label}${cuenta[p.id] ? ` <span class="count">${cuenta[p.id]}</span>` : ''}
             </button>`).join('')}
         </div>
         <div id="ficha-panel">${panelFicha(tab.id, c)}</div>
@@ -184,12 +190,8 @@ export function vistaContacto(id) {
 /** @param {string} tab @param {Contacto} c */
 function panelFicha(tab, c) {
   if (tab === 'tareas') return panelTareasFicha(c);
-  if (tab === 'whatsapp') return panelWhatsapp(c);
-  if (tab === 'correo') return panelCorreo(c);
+  if (tab === 'canales') return panelCanales(c);
   const notas = notasDe(c.id);
-  /** @type {Record<string, number>} */
-  const conteoTipos = {};
-  notas.forEach((n) => (conteoTipos[n.tipo] = (conteoTipos[n.tipo] || 0) + 1));
   return `
     <div class="col-titulo">
       <span class="muted small">${notas.length ? '' : 'Sin notas todavía'}</span>
@@ -198,13 +200,6 @@ function panelFicha(tab, c) {
     ${notas.length ? `
       <div class="notas-filtros">
         <input type="search" id="nc-q" placeholder="Buscar en las notas…" value="${esc(ui.notasContactoQ)}">
-        <div class="chips">
-          <button class="chip ${ui.notaFiltro === '' ? 'active' : ''}" data-action="filtro-nota" data-tipo="">Todas <b>${notas.length}</b></button>
-          ${TIPOS_NOTA.filter((t) => conteoTipos[t.id]).map((t) => `
-            <button class="chip ${ui.notaFiltro === t.id ? 'active' : ''}" data-action="filtro-nota" data-tipo="${t.id}">
-              ${ico(t.icon)} ${t.label} <b>${conteoTipos[t.id]}</b>
-            </button>`).join('')}
-        </div>
       </div>` : ''}
     <div id="notas-contacto" class="notas"></div>`;
 }
@@ -235,88 +230,3 @@ function panelTareasFicha(c) {
         </details>` : ''}
     </section>`;
 }
-
-/** @param {string} que */
-const AVISO_BORRADOR = (que) => `
-  <div class="aviso-borrador small">${ico('idea')} <span><b>Borrador.</b> ${que}</span></div>`;
-
-// Borrador de las conversaciones de WhatsApp: los WhatsApp registrados como acciones, en forma de chat.
-/** @param {Contacto} c */
-function panelWhatsapp(c) {
-  const tel = (c.telefono || '').replace(/\D/g, '');
-  const mensajes = accionesDe(c.id).filter((a) => a.tipo === 'whatsapp').reverse();
-  return `
-    ${AVISO_BORRADOR('Aún no está conectado con WhatsApp: aquí se ven los WhatsApp registrados como acciones y «Enviar» abre WhatsApp Web con el mensaje y lo registra. Cuando se conecte, aparecerá la conversación real.')}
-    <div class="card chat">
-      <div class="chat-cabecera">
-        <span class="avatar sm">${esc(iniciales(c.nombre))}</span>
-        <div class="grow"><strong>${esc(c.nombre)}</strong><div class="muted small">${esc(c.telefono) || 'Sin teléfono'}</div></div>
-      </div>
-      <div class="chat-cuerpo">
-        ${mensajes.map((a) => `
-          <div class="burbuja mia">
-            <div>${esc(a.resumen) || '<span class="muted">(sin texto)</span>'}</div>
-            <time>${fmtFecha(a.fecha)}${a.hora ? ` · ${a.hora}` : ''} ✓✓</time>
-          </div>`).join('') || '<p class="muted small chat-vacio">Todavía no hay WhatsApp con este contacto.</p>'}
-      </div>
-      <form class="chat-escribir" data-form="whatsapp">
-        <textarea name="texto" rows="2" placeholder="${tel ? `Escribe un WhatsApp a ${esc(c.nombre.split(/\s+/)[0])}…` : 'Añade un teléfono al contacto para poder escribirle'}" ${tel ? '' : 'disabled'}></textarea>
-        <button class="btn primary" ${tel ? '' : 'disabled'}>${ico('chat')} Enviar</button>
-      </form>
-    </div>`;
-}
-
-// Borrador del correo: los emails registrados como acciones, como una bandeja, y un formulario para escribir.
-/** @param {Contacto} c */
-function panelCorreo(c) {
-  const correos = accionesDe(c.id).filter((a) => a.tipo === 'email');
-  return `
-    ${AVISO_BORRADOR('Aún no está conectado con el correo: aquí se ven los emails registrados como acciones y «Enviar» abre tu programa de correo con el mensaje y lo registra.')}
-    <form class="card pad correo-escribir" data-form="correo">
-      <div class="correo-fila"><span class="muted">Para</span> ${c.email ? esc(c.email) : '<span class="txt-danger">Este contacto no tiene email</span>'}</div>
-      <input name="asunto" placeholder="Asunto" ${c.email ? '' : 'disabled'}>
-      <textarea name="cuerpo" rows="5" placeholder="Escribe el correo…" ${c.email ? '' : 'disabled'}></textarea>
-      <div class="row between"><span class="muted small">Se registrará como acción «Email».</span><button class="btn primary" ${c.email ? '' : 'disabled'}>${ico('correo')} Enviar</button></div>
-    </form>
-    <div class="card correo-lista">
-      ${correos.map((a) => `
-        <div class="correo-item" data-action="editar-accion" data-id="${a.id}">
-          <span class="tl-punto">${ico('correo')}</span>
-          <div class="grow"><strong>${esc(a.resumen) || '(sin asunto)'}</strong><div class="muted small">Enviado a ${esc(c.email || c.nombre)}</div></div>
-          <time class="muted small">${fmtFecha(a.fecha)}</time>
-        </div>`).join('') || '<p class="muted small chat-vacio">Todavía no hay correos con este contacto.</p>'}
-    </div>`;
-}
-
-// Enviar desde los borradores: se abre WhatsApp / el correo y queda registrado como acción.
-app.addEventListener('submit', (e) => {
-  const f = /** @type {HTMLFormElement} */ (e.target);
-  const tipo = f.dataset.form;
-  if (tipo !== 'whatsapp' && tipo !== 'correo') return;
-  e.preventDefault();
-  const c = contacto(rutaActual().id);
-  if (!c) return;
-  let resumen;
-  if (tipo === 'whatsapp') {
-    const texto = f.texto.value.trim();
-    if (!texto) return;
-    window.open(`https://wa.me/${/** @type {string} */ (c.telefono).replace(/\D/g, '')}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
-    resumen = texto.length > 300 ? texto.slice(0, 300) + '…' : texto;
-  } else {
-    const asunto = f.asunto.value.trim();
-    const cuerpo = f.cuerpo.value.trim();
-    if (!asunto && !cuerpo) return;
-    location.href = `mailto:${c.email}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
-    resumen = asunto || cuerpo.split('\n')[0].slice(0, 120);
-  }
-  const ac = { id: uid(), contactId: c.id, tipo: tipo === 'whatsapp' ? 'whatsapp' : 'email', fecha: hoy(), hora: horaActual(), resumen, noteId: null, taskId: null, creado: ahora() };
-  db.actions.push(ac);
-  tocar(c.id);
-  guardar();
-  render();
-  avisar(tipo === 'whatsapp' ? 'WhatsApp registrado' : 'Email registrado', () => {
-    db.actions = db.actions.filter((x) => x.id !== ac.id);
-    guardar();
-    render();
-  });
-});

@@ -1,5 +1,6 @@
 // Acciones realizadas y próximas: la línea de tiempo de la ficha y el formulario.
 import { tipoAccionDe, TIPOS_ACCION } from './schema.js';
+import { borrarGrabacion, urlGrabacion } from './store.js';
 import { tocar } from '../contacts/store.js';
 import { ACCION_A_NOTA } from '../notes/schema.js';
 import { nota } from '../notes/store.js';
@@ -29,6 +30,7 @@ export function accionHTML(a) {
         </div>
         ${a.resumen ? `<div class="tl-texto">${esc(a.resumen)}</div>` : ''}
         ${n ? `<button class="link-btn small" data-action="ver-nota" data-id="${n.id}">${ico('nota')} ${!n.titulo || n.titulo === a.resumen ? 'Ver nota' : esc(n.titulo)}</button>` : ''}
+        ${a.grabacion ? `<audio class="tl-audio" controls preload="metadata" src="${urlGrabacion(a.grabacion)}" title="Grabación de la llamada"></audio>` : ''}
       </div>
     </div>`;
 }
@@ -96,8 +98,9 @@ export function modalAccion(contactId, a) {
   });
   if (!nueva) {
     botonBorrarModal(() => {
-      if (!confirm('¿Eliminar esta acción? La nota asociada, si la hay, se conserva.')) return false;
+      if (!confirm(`¿Eliminar esta acción?${a.grabacion ? ' También se borrará la grabación de la llamada.' : ''} La nota asociada, si la hay, se conserva.`)) return false;
       db.actions = db.actions.filter((x) => x.id !== a.id);
+      borrarGrabacion(a.grabacion);
       guardar();
       render();
     });

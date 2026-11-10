@@ -53,6 +53,42 @@ test('guarda, vuelve a leer y hace la copia diaria junto al archivo de datos', a
   assert.match(copias[0], /^data-\d{4}-\d{2}-\d{2}\.json$/);
 });
 
+test('grabaciones: guarda el audio junto al archivo de datos, lo sirve por trozos y lo borra', async () => {
+  const URL_GRAB = `http://127.0.0.1:${PORT}/api/grabaciones`;
+  const audio = Buffer.from(Array.from({ length: 1000 }, (_, i) => i % 256));
+  const r = await fetch(`${URL_GRAB}/abc123`, { method: 'PUT', body: audio });
+  assert.equal(r.status, 200);
+  const guardado = path.join(dir, 'grabaciones', 'abc123.webm');
+  assert.deepEqual(fs.readFileSync(guardado), audio);
+  assert.equal(fs.existsSync(guardado + '.tmp'), false, 'no deja el temporal');
+
+  const entero = await fetch(`${URL_GRAB}/abc123`);
+  assert.equal(entero.status, 200);
+  assert.equal(entero.headers.get('content-type'), 'audio/webm');
+  assert.equal(entero.headers.get('accept-ranges'), 'bytes');
+  assert.deepEqual(Buffer.from(await entero.arrayBuffer()), audio);
+
+  const trozo = await fetch(`${URL_GRAB}/abc123`, { headers: { Range: 'bytes=100-199' } });
+  assert.equal(trozo.status, 206);
+  assert.equal(trozo.headers.get('content-range'), 'bytes 100-199/1000');
+  assert.deepEqual(Buffer.from(await trozo.arrayBuffer()), audio.subarray(100, 200));
+  assert.equal((await fetch(`${URL_GRAB}/abc123`, { headers: { Range: 'bytes=5000-' } })).status, 416);
+
+  assert.equal((await fetch(`${URL_GRAB}/abc123`, { method: 'DELETE' })).status, 200);
+  assert.equal(fs.existsSync(guardado), false);
+  assert.equal((await fetch(`${URL_GRAB}/abc123`)).status, 404);
+});
+
+test('grabaciones: rechaza identificadores raros y audios vacíos', async () => {
+  for (const id of ['..%2fdata', 'a.b', 'x']) {
+    const r = await fetch(`http://127.0.0.1:${PORT}/api/grabaciones/${id}`, { method: 'PUT', body: 'audio' });
+    assert.equal(r.status, 400, id);
+  }
+  const vacio = await fetch(`http://127.0.0.1:${PORT}/api/grabaciones/vacio1`, { method: 'PUT', body: '' });
+  assert.equal(vacio.status, 400);
+  assert.equal(fs.existsSync(path.join(dir, 'grabaciones', 'vacio1.webm')), false);
+});
+
 test('sirve la interfaz y sus módulos, pero nada fuera de src/ ni el código del servidor', async () => {
   const html = await fetch(`http://127.0.0.1:${PORT}/`);
   assert.equal(html.status, 200);

@@ -63,7 +63,7 @@ const barraEditor = () => `
     <button type="button" data-md-cmd="numerada" title="Lista numerada">1. Lista</button>
     <button type="button" data-md-cmd="enlace" title="Enlace (Ctrl+K)">${ico('enlace')} Enlace</button>
     <span class="md-ayuda">Ctrl+B negrita · Ctrl+K enlace · Enter continúa la lista · Tab la sangra</span>
-    <button type="button" class="md-pantalla" data-md-cmd="pantalla" title="Pantalla completa (Esc para salir)">${ico('expandir')}</button>
+    <button type="button" class="md-pantalla" data-md-cmd="pantalla" title="Ampliar (Esc para volver)">${ico('expandir')}</button>
   </div>`;
 
 /**
@@ -90,11 +90,13 @@ export function ajustarScroll() {
 export function comandoEditor(ta, cmd) {
   const editor = /** @type {HTMLElement} */ (ta.closest('.editor'));
   if (cmd === 'pantalla') {
-    const completa = editor.classList.toggle('completa');
+    // Dentro de una ventana (p. ej. la de una nota) se amplía la ventana entera; fuera, solo el editor.
+    const dialogo = editor.closest('dialog');
+    const completa = dialogo ? dialogo.classList.toggle('ampliado') : editor.classList.toggle('completa');
     ajustarScroll();
     const b = /** @type {HTMLElement} */ (editor.querySelector('.md-pantalla'));
-    b.innerHTML = completa ? `${ico('cerrar')} Salir` : ico('expandir');
-    b.title = completa ? 'Salir de pantalla completa (Esc)' : 'Pantalla completa (Esc para salir)';
+    b.innerHTML = completa ? `${ico('cerrar')} Reducir` : ico('expandir');
+    b.title = completa ? 'Volver al tamaño normal (Esc)' : 'Ampliar (Esc para volver)';
     ta.focus();
     return;
   }

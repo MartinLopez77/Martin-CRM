@@ -81,9 +81,9 @@ test('tareas: reprogramar vencidas a hoy (con Deshacer) y reunión cancelada', a
   expect([t.hecha, t.cancelada]).toEqual([true, true]);
 });
 
-test('ficha: enviar un WhatsApp desde el borrador lo registra', async ({ page, context }) => {
+test('ficha: enviar un WhatsApp desde Canales lo registra', async ({ page, context }) => {
   await page.goto('/#/contacto/c-bruno');
-  await page.locator('[data-tab="whatsapp"]').click();
+  await page.locator('[data-tab="canales"]').click();
   // Sin salir a internet: la pestaña de WhatsApp Web se queda en blanco.
   await context.route('https://wa.me/**', (r) => r.fulfill({ body: '' }));
   const ventana = context.waitForEvent('page');
@@ -96,7 +96,7 @@ test('ficha: enviar un WhatsApp desde el borrador lo registra', async ({ page, c
   await expect(page.locator('.burbuja')).toContainText('Hola Bruno, te paso la propuesta');
 });
 
-test('editor de notas: negrita con Ctrl+B, lista con Enter y pantalla completa', async ({ page }) => {
+test('editor de notas: negrita con Ctrl+B, lista con Enter y ampliar', async ({ page }) => {
   await page.goto('/#/contacto/c-ana');
   await page.locator('#ficha-panel').getByRole('button', { name: '+ Nota' }).click();
   const ta = page.locator('#modal [name=contenido]');
@@ -109,10 +109,16 @@ test('editor de notas: negrita con Ctrl+B, lista con Enter y pantalla completa',
   await page.keyboard.type('dos');
   await expect(ta).toHaveValue('**Clave**\n- uno\n- dos');
 
+  // Ampliar agranda la ventana entera (con margen alrededor), no solo el cuadro de texto
+  const antes = /** @type {{ width: number, height: number }} */ (await page.locator('#modal').boundingBox());
   await page.locator('#modal [data-md-cmd="pantalla"]').click();
-  await expect(page.locator('#modal .editor')).toHaveClass(/completa/);
-  await page.keyboard.press('Escape'); // sale de pantalla completa, no cierra el modal
-  await expect(page.locator('#modal .editor')).not.toHaveClass(/completa/);
+  await expect(page.locator('#modal')).toHaveClass(/ampliado/);
+  const ampliada = /** @type {{ x: number, y: number, width: number, height: number }} */ (await page.locator('#modal').boundingBox());
+  expect(ampliada.width).toBeGreaterThan(antes.width);
+  expect(ampliada.height).toBeGreaterThan(antes.height);
+  expect(ampliada.y).toBeGreaterThanOrEqual(40); // deja hueco arriba
+  await page.keyboard.press('Escape'); // vuelve a su tamaño, no cierra el modal
+  await expect(page.locator('#modal')).not.toHaveClass(/ampliado/);
   await expect(page.locator('#modal')).toBeVisible();
   await page.locator('#modal').getByRole('button', { name: 'Guardar' }).click();
   await expect(page.locator('.nota').first().locator('li')).toHaveText(['uno', 'dos']);
@@ -133,4 +139,23 @@ test('datos de versiones anteriores se migran al cargar', async ({ page }) => {
   expect([c.companyId, c.ownerId, 'empresa' in c]).toEqual([e.id, 'u-martin', false]);
   expect([e.web, e.ciudad]).toEqual(['vieja.example', 'Bilbao']);
   expect(d.users.map((/** @type {any} */ u) => u.id)).toEqual(['u-martin']);
+});
+
+test('dashboard: cifras del periodo, llamadas por día y embudo', async ({ page }) => {
+  await page.goto('/#/dashboard');
+  await expect(page.locator('h1')).toHaveText('Dashboard');
+  await expect(page.locator('.menu a.active')).toHaveText(/Dashboard/);
+  const llamadas = page.locator('.db-cifra', { hasText: 'Llamadas' });
+  await expect(llamadas.locator('.db-cifra-valor')).toHaveText('1');
+  await expect(llamadas).toContainText('1 conectadas · 100 %');
+  await expect(page.locator('.db-cifra', { hasText: 'Reuniones agendadas' }).locator('.db-cifra-valor')).toHaveText('1');
+  await expect(page.locator('.db-col')).toHaveCount(30);
+  await page.locator('#db-periodo').selectOption('7');
+  await expect(page.locator('.db-col')).toHaveCount(7);
+  // El detalle de cada día aparece al pasar por encima
+  const martes = page.locator('.db-col').nth(4);
+  await martes.hover();
+  await expect(martes.locator('.db-tip')).toBeVisible();
+  await expect(martes.locator('.db-tip')).toContainText('1 llamada');
+  await expect(page.locator('.db-hfila', { hasText: 'Negociación' })).toContainText('1');
 });

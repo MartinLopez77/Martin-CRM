@@ -11,6 +11,9 @@
  * @property {string | null} noteId nota asociada
  * @property {string | null} taskId tarea de la que viene (al completarla)
  * @property {string} creado
+ * @property {string} [grabacion] id de la grabación de la llamada (archivo en grabaciones/ del servidor)
+ * @property {number} [duracion] segundos que duró la llamada (las registradas desde la ventana de llamada)
+ * @property {string} [resultado] resultado de la llamada (id de RESULTADOS_LLAMADA, en call/store.js)
  */
 
 // Acciones: lo que yo he hecho hacia el cliente (o tengo planeado hacer).

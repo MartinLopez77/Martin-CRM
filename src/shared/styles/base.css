@@ -1,26 +1,59 @@
+/* Fuentes de Diga, guardadas en el CRM (src/client/fonts, licencia OFL): funcionan sin internet. */
+@font-face { font-family: 'Geist'; src: url('../../client/fonts/geist.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Sora'; src: url('../../client/fonts/sora.woff2') format('woff2'); font-weight: 100 800; font-display: swap; }
+
 :root {
-  /* Tema claro: azul y blanco */
-  --bg: #f4f7fc;
+  /* Tema de Diga (design_1.md): índigo sobre lienzo casi blanco, texto azul marino, bordes lavanda
+     y naranja solo para lo activo. Las superficies se elevan hacia el blanco, nunca se oscurecen. */
+
+  /* Primitivas de Diga */
+  --indigo: #343e96;          /* BrandPrimary/500: marca y acción */
+  --indigo-suave: #6772ca;    /* BrandPrimary/50 */
+  --marino: #040b53;          /* Brandadditional/500: texto principal y hover del índigo */
+  --lavanda: #f5f5ff;         /* Tertiary/300: hovers con tinte de marca */
+  --lavanda-activa: #ebecff;  /* Tertiary/400: seleccionado */
+  --lavanda-borde: #d7daff;   /* Tertiary/500: borde por defecto */
+  --lavanda-fuerte: #adb3ff;  /* Tertiary/700 */
+  --naranja: #ff6314;         /* Accentcolor/900: texto de acento */
+  --naranja-borde: #ffb48f;   /* Accentcolor/300: tab activo */
+  --naranja-fondo: #fff5f0;   /* Quaternary/400: tab activo */
+  --gris-borde: #d7dae5;      /* Neutralcolors/300: borde neutro (tablas, tabs) */
+  --gris-fondo: #f6f6f9;      /* Neutralcolors/100 */
+  --texto-2: #454859;         /* Neutralcolors/900: texto secundario fuerte */
+  --placeholder: #949ab8;     /* Neutralcolors/500 */
+
+  /* Fuentes: Geist para títulos (24px o más), Sora para todo lo demás. Sin internet, Inter o la del sistema. */
+  --font-titulos: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-texto: 'Sora', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Sombras: casi invisibles, sobre un negro azulado (nunca negro puro) */
+  --shadow-xs: 0 1px 2px 0 rgba(10, 13, 18, .05);
+  --shadow-boton: 0 -2px 0 0 rgba(10, 13, 18, .05) inset, 0 1px 2px 0 rgba(10, 13, 18, .05);
+  --shadow-sm: 0 1px 3px 0 rgba(10, 13, 18, .10), 0 1px 2px -1px rgba(10, 13, 18, .10);
+  --shadow-flotante: 0 12px 32px -4px rgba(10, 13, 18, .10), 0 4px 8px -2px rgba(10, 13, 18, .06);
+
+  /* Los nombres que usa todo el CRM */
+  --bg: #fdfdfd;
   --surface: #ffffff;
-  --surface-2: #eef3fa;
-  --border: #dde5f0;
-  --text: #16213a;
-  --muted: #64748b;
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
-  --accent-soft: #eaf1fe;
-  --danger: #dc2626;
-  --ok: #059669;
-  --radius: 10px;
-  --shadow: 0 1px 2px rgba(22, 33, 58, .04), 0 1px 3px rgba(22, 33, 58, .06);
+  --surface-2: var(--lavanda);
+  --border: var(--lavanda-borde);
+  --text: var(--marino);
+  --muted: #767da3;
+  --accent: var(--indigo);
+  --accent-strong: var(--marino);
+  --accent-soft: var(--lavanda-activa);
+  --danger: #bf2717;
+  --ok: #1c7d67;
+  --radius: 12px;
+  --shadow: var(--shadow-xs);
   /* Tareas */
   --td-accion: var(--accent);
-  --td-p1: #d1453b;
-  --td-p2: #eb8909;
-  --td-p3: #246fe0;
-  --td-hoy: #058527;
-  --td-manana: #ad6200;
-  --td-semana: #692fc2;
+  --td-p1: #bf2717;
+  --td-p2: #ff7e3d;
+  --td-p3: var(--indigo-suave);
+  --td-hoy: #1c7d67;
+  --td-manana: #cc8800;
+  --td-semana: #6772ca;
   color-scheme: light;
 }
 
@@ -28,21 +61,22 @@
 
 body {
   margin: 0;
-  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 14px/1.5 var(--font-texto);
   background: var(--bg);
   color: var(--text);
 }
 
 a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
-h1, h2, h3, h4 { margin: 0; line-height: 1.25; }
-h1 { font-size: 22px; }
+a:hover { color: var(--marino); text-decoration: underline; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; font-weight: 600; }
+h1 { font: 600 24px/1.2 var(--font-titulos); }
 h2 { font-size: 15px; }
 h3 { font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+::placeholder { color: var(--placeholder); }
 
 .muted { color: var(--muted); }
 .small { font-size: 12.5px; }
 .txt-danger { color: var(--danger); font-weight: 600; }
-.txt-ok { color: var(--ok); font-weight: 500; }
+.txt-ok { color: var(--ok); font-weight: 600; }
 .grow { flex: 1; min-width: 0; }
 .truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

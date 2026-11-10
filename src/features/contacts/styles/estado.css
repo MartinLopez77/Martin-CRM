@@ -6,7 +6,7 @@
   width: 7px; height: 7px; border-radius: 50%; background: var(--c);
 }
 .estado-select {
-  font-size: 12.5px; font-weight: 500; color: var(--text);
+  font-size: 12.5px; font-weight: 400; color: var(--text);
   background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
   min-height: 28px; padding: 2px 6px 2px 22px; cursor: pointer;
 }

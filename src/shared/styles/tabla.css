@@ -7,7 +7,7 @@
   text-transform: uppercase; letter-spacing: .03em;
   padding: 10px 14px; border-bottom: 1px solid var(--border);
 }
-.tabla td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tabla td { padding: 12px 14px; border-bottom: 1px solid var(--accent-soft); vertical-align: top; }
 .tabla tr:last-child td { border-bottom: 0; }
 .tabla tbody tr { cursor: pointer; }
 .tabla tbody tr:hover { background: var(--surface-2); }

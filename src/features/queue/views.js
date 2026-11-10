@@ -1,6 +1,6 @@
 // Cola de tareas: la tarea en curso («Tarea 2 de 10») en la ficha del contacto o en #/cola.
 import { tipoAccionDe } from '../activity/schema.js';
-import { abrirLlamada, cerrarLlamada, esLlamada } from '../call/store.js';
+import { abrirLlamada, cerrarLlamada, esLlamada, llamadaPendiente } from '../call/store.js';
 import { contacto } from '../contacts/store.js';
 import { nota } from '../notes/store.js';
 import { colaActiva, limpiarCola } from './store.js';
@@ -21,8 +21,8 @@ import { ico } from '../../shared/ui/icons.js';
 /** @param {import('../tasks/schema.js').Tarea} t @param {import('../contacts/schema.js').Contacto | null} c */
 export function prepararLlamadaCola(t, c) {
   const llamando = !t.hecha && esLlamada(t) && !!c;
-  if (llamando && ui.llamada?.taskId !== t.id && !ui.llamada?.inicio && ui.llamadaCerrada !== t.id) abrirLlamada(/** @type {import('../contacts/schema.js').Contacto} */ (c).id, t.id);
-  if (!llamando && ui.llamada?.taskId && ui.llamada.taskId !== t.id && !ui.llamada.inicio && !ui.llamada.notas.trim()) cerrarLlamada();
+  if (llamando && ui.llamada?.taskId !== t.id && !llamadaPendiente(ui.llamada) && ui.llamadaCerrada !== t.id) abrirLlamada(/** @type {import('../contacts/schema.js').Contacto} */ (c).id, t.id);
+  if (!llamando && ui.llamada?.taskId && ui.llamada.taskId !== t.id && !llamadaPendiente(ui.llamada) && !ui.llamada.notas.trim()) cerrarLlamada();
   return llamando;
 }
 

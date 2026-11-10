@@ -2,6 +2,7 @@
 import { actualizarBadges } from './layout.js';
 import { empresa } from '../features/companies/store.js';
 import { vistaEmpresa, vistaEmpresas } from '../features/companies/views.js';
+import { vistaDashboard } from '../features/dashboard/views.js';
 import { contacto } from '../features/contacts/store.js';
 import { vistaContacto } from '../features/contacts/views/detail.js';
 import { vistaContactos } from '../features/contacts/views/list.js';
@@ -24,10 +25,11 @@ export function pintarVista() {
     location.replace('#/tareas');
     return;
   }
-  const seccion = { cola: 'tareas', empresa: 'empresas', tarea: 'tareas' }[ruta] || (['tareas', 'empresas', 'secuencias', 'equipo', 'ajustes'].includes(ruta) ? ruta : 'contactos');
+  const seccion = { cola: 'tareas', empresa: 'empresas', tarea: 'tareas' }[ruta] || (['dashboard', 'tareas', 'empresas', 'secuencias', 'equipo', 'ajustes'].includes(ruta) ? ruta : 'contactos');
   document.querySelectorAll('.menu a').forEach((a) => a.classList.toggle('active', /** @type {HTMLElement} */ (a).dataset.ruta === seccion));
 
-  if (ruta === 'tareas') vistaTareas();
+  if (ruta === 'dashboard') vistaDashboard();
+  else if (ruta === 'tareas') vistaTareas();
   else if (ruta === 'ajustes') vistaAjustes();
   else if (ruta === 'cola') vistaSecuencia();
   else if (ruta === 'empresas') vistaEmpresas();

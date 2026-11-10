@@ -61,8 +61,11 @@ tests/
 ```
 
 Features: `contacts` (la plantilla de referencia), `companies`, `notes`, `activity` (acciones realizadas),
-`tasks`, `queue` (cola «Empezar tareas»), `call` (ventana de llamada), `sequences`, `import` (CSV),
-`search` (buscador de arriba), `team`, `settings`.
+`tasks`, `queue` (cola «Empezar tareas»), `call` (ventana de llamada y grabación), `sequences`, `import` (CSV),
+`search` (buscador de arriba), `team`, `settings`, `dashboard` (estadísticas).
+
+Los datos de las tarjetas de contacto y empresa se editan pulsándolos: `datoEditable()` (`shared/ui/html.js`) pinta la
+fila y `editarDato()` (`shared/ui/editar-dato.js`) abre el recuadro; cada feature guarda en su `actions.js`.
 
 ## Convenciones
 
@@ -80,6 +83,9 @@ Features: `contacts` (la plantilla de referencia), `companies`, `notes`, `activi
 - **Archivos pequeños:** menos de 300–400 líneas. Si crece, se parte (p. ej. `views/list.js` y `views/detail.js`).
 - **CSS:** cada feature en `features/<feature>/styles/`. `src/client/styles.css` es la lista de `@import` **en
   orden de cascada**: un archivo nuevo que deba pisar reglas de otro va después de él.
+- **Tema:** el de Diga, descrito en `design_1.md`. Colores, sombras y fuentes son variables de
+  `shared/styles/base.css` (`--accent`, `--border`, `--naranja-fondo`…): nada de colores sueltos. Radios 6/8/10/12px,
+  sin pills; pesos 400/600/700 (sin 500); naranja solo para lo activo, índigo para las acciones.
 - **Fechas:** siempre hora de España (`hoy()`, `horaActual()` de `shared/lib/dates.js`), fechas como `AAAA-MM-DD`.
 - **Cambios en contactos:** con `cambiarContacto(c, () => …)`, que deja la nota «Cambio de datos».
 

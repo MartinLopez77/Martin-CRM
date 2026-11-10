@@ -19,6 +19,8 @@ export function partesEn(zona, d = new Date()) {
 }
 
 export const hoy = () => { const p = partesEn(ZONA); return `${p.year}-${p.month}-${p.day}`; };
+/** El día (hora de España) de un instante guardado como ISO ('2026-11-05T09:00:00Z' → '2026-11-05'). @param {string} iso */
+export const diaDe = (iso) => { const p = partesEn(ZONA, new Date(iso)); return `${p.year}-${p.month}-${p.day}`; };
 export const horaActual = (zona = ZONA) => { const p = partesEn(zona); return `${p.hour}:${p.minute}`; };
 
 /**

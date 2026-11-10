@@ -2,10 +2,11 @@
 
 .llamada {
   position: fixed; right: 20px; bottom: 20px; z-index: 900;
-  width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 96px);
+  /* Cuadrada: igual de ancha que de alta (si no cabe, se ajusta a la pantalla y el cuerpo se desplaza) */
+  width: 400px; height: 400px; max-width: calc(100vw - 32px); max-height: calc(100vh - 96px);
   display: flex; flex-direction: column;
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(22, 33, 58, .28); overflow: hidden;
+  box-shadow: var(--shadow-flotante); overflow: hidden;
 }
 .llamada[hidden] { display: none; }
 .ll-cabecera {
@@ -13,7 +14,7 @@
   background: var(--accent); color: #fff; cursor: grab; user-select: none; font-size: 13.5px;
   touch-action: none; /* para poder arrastrarla también en pantallas táctiles */
 }
-.llamada.arrastrando { user-select: none; box-shadow: 0 22px 60px rgba(22, 33, 58, .38); }
+.llamada.arrastrando { user-select: none; box-shadow: 0 20px 44px -6px rgba(10, 13, 18, .16); }
 .llamada.arrastrando .ll-cabecera { cursor: grabbing; }
 .ll-cabecera .ico { color: #fff; }
 .ll-cabecera .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -23,7 +24,7 @@
 }
 .ll-btn:hover { background: rgba(255, 255, 255, .18); }
 .ll-btn .ico { width: 14px; height: 14px; }
-.ll-cuerpo { padding: 14px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.ll-cuerpo { flex: 1; min-height: 0; padding: 14px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .ll-cuerpo .persona { align-items: center; }
 .ll-cuerpo .persona a { color: var(--text); }
 .ll-tarea { padding: 6px 10px; border-radius: 8px; background: var(--surface-2); color: var(--muted); }
@@ -41,7 +42,23 @@
 .ll-duracion { margin: -6px 0 0; }
 .ll-cuerpo .md-ayuda, .ll-cuerpo .md-pantalla { display: none; }
 .ll-pie { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
-.llamada.minimizada { width: 300px; }
+.llamada.minimizada { width: 300px; height: auto; }
+.ll-llamar:disabled, .ll-llamar:disabled:hover { opacity: .4; background: var(--ok); border-color: var(--ok); filter: grayscale(.6); }
+/* Resultado sin completar después de colgar: hay que elegirlo para poder cerrar */
+.ll-cuerpo select.falta { border-color: var(--naranja-borde); background: var(--naranja-fondo); box-shadow: 0 0 0 3px var(--naranja-fondo); }
+
+/* Grabación: punto rojo que late mientras se graba */
+.ll-rec {
+  flex: none; width: 9px; height: 9px; border-radius: 50%; background: #e8584a;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); animation: ll-latido 1.4s ease-in-out infinite;
+}
+@keyframes ll-latido { 50% { opacity: .35; } }
+.ll-grabando {
+  display: flex; align-items: center; gap: 8px; margin: -4px 0 0;
+  padding: 6px 10px; border-radius: 8px; background: #fef7f6; color: var(--text);
+}
+.ll-grabando .ll-rec { box-shadow: none; }
+.ll-grabando.hecha { background: var(--surface-2); color: var(--muted); }
 
 .sq-llamada-aviso {
   display: flex; align-items: center; gap: 10px;

@@ -3,21 +3,19 @@
 .ficha-tabs { margin-bottom: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .ficha-tabs .vista-tab { display: inline-flex; align-items: center; gap: 5px; padding: 8px 9px; }
 .ficha-tabs .count { font-weight: 600; }
-.etq-borrador {
-  font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em;
-  color: var(--td-manana); background: color-mix(in srgb, var(--td-manana) 12%, transparent);
-  border-radius: 4px; padding: 0 5px;
-}
 #ficha-panel { display: flex; flex-direction: column; gap: 12px; }
 .td-ficha .td-lista:empty { display: none; }
-.aviso-borrador {
-  display: flex; gap: 8px; align-items: flex-start;
-  padding: 8px 12px; border-radius: 8px;
-  background: color-mix(in srgb, var(--td-manana) 9%, var(--surface)); border: 1px dashed color-mix(in srgb, var(--td-manana) 40%, transparent);
+/* Canales: selector WhatsApp / Correo */
+.canales-selector { display: inline-flex; gap: 4px; padding: 3px; align-self: flex-start; border: 1px solid var(--gris-borde); border-radius: 10px; background: var(--bg); }
+.canales-selector button {
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--muted);
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid transparent; border-radius: 6px; background: none; padding: 4px 12px; cursor: pointer;
 }
-.aviso-borrador .ico { color: var(--td-manana); margin-top: 2px; }
+.canales-selector button:hover { color: var(--text); background: var(--surface-2); }
+.canales-selector button.active { color: var(--accent); background: var(--accent-soft); border-color: var(--lavanda-fuerte); }
 
-/* Borrador de WhatsApp: conversación en forma de chat */
+/* WhatsApp: conversación en forma de chat */
 .chat { overflow: hidden; display: flex; flex-direction: column; }
 .chat-cabecera { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
 .chat-cuerpo {
@@ -35,7 +33,7 @@
 .chat-escribir { display: flex; gap: 8px; align-items: flex-end; padding: 10px; border-top: 1px solid var(--border); }
 .chat-escribir textarea { flex: 1; resize: none; }
 
-/* Borrador de correo */
+/* Correo */
 .correo-escribir { display: flex; flex-direction: column; gap: 8px; }
 .correo-fila { font-size: 13px; display: flex; gap: 8px; }
 .correo-lista { display: flex; flex-direction: column; }

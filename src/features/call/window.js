@@ -1,5 +1,5 @@
 // Ventana de llamada (como la de HubSpot): se puede arrastrar, minimizar y lleva el cronómetro.
-import { cerrarLlamada, colgar, fmtDuracion, registrarLlamada, RESULTADOS_LLAMADA, segundosLlamada } from './store.js';
+import { cerrarLlamada, colgar, fmtDuracion, grabarLlamada, llamadaPendiente, registrarLlamada, RESULTADOS_LLAMADA, segundosLlamada } from './store.js';
 import { empresaDe } from '../companies/store.js';
 import { contactoExistente } from '../contacts/store.js';
 import { enModoCola } from '../queue/store.js';
@@ -27,10 +27,11 @@ export function pintarLlamada() {
   ventanaLlamada.innerHTML = `
     <div class="ll-cabecera" data-ll="minimizar" title="Arrastra para moverla · clic para ${L.minimizada ? 'desplegar' : 'minimizar'} · doble clic para devolverla a su sitio">
       ${ico('telefono')}
-      <span class="grow"><b>${L.inicio ? 'En llamada' : 'Llamada'}</b> · ${esc(c.nombre)}</span>
+      <span class="grow"><b>${L.inicio ? 'En llamada' : L.terminada ? 'Llamada terminada' : 'Llamada'}</b></span>
+      ${L.inicio && L.grabacion ? '<span class="ll-rec" title="Grabando"></span>' : ''}
       ${L.inicio ? `<span class="ll-tiempo">${fmtDuracion(seg)}</span>` : ''}
       <button type="button" class="ll-btn" data-ll="minimizar" aria-label="${L.minimizada ? 'Desplegar' : 'Minimizar'}">${L.minimizada ? '▴' : '▾'}</button>
-      <button type="button" class="ll-btn" data-ll="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>
+      <button type="button" class="ll-btn" data-ll="cerrar" aria-label="Cerrar" title="${llamadaPendiente(L) ? 'Registrar la llamada y cerrar (antes, elige el resultado)' : 'Cerrar'}">${ico('cerrar')}</button>
     </div>
     ${L.minimizada ? '' : `
       <div class="ll-cuerpo">
@@ -38,7 +39,7 @@ export function pintarLlamada() {
           <span class="avatar sm">${esc(iniciales(c.nombre))}</span>
           <div class="grow">
             <a href="#/contacto/${c.id}"><strong>${esc(c.nombre)}</strong></a>
-            <div class="muted small">${esc([c.cargo, empresaDe(c)].filter(Boolean).join(' · '))}</div>
+            ${empresaDe(c) ? `<div class="muted small">${esc(empresaDe(c))}</div>` : ''}
           </div>
         </div>
         ${t ? `<div class="ll-tarea small">${ico('check-circulo')} ${esc(t.titulo)}</div>` : ''}
@@ -46,19 +47,37 @@ export function pintarLlamada() {
           ${c.telefono ? `<span class="ll-numero">${esc(tel)}</span>` : `<input name="ll-tel" type="tel" placeholder="Número de teléfono" value="${esc(L.telefono)}">`}
           ${L.inicio
             ? `<span class="ll-tiempo grande">${fmtDuracion(seg)}</span><button type="button" class="btn ll-colgar" data-ll="colgar">Colgar</button>`
-            : `<a class="btn ll-llamar ${tel ? '' : 'desactivado'}" href="${tel ? `tel:${esc(tel.replace(/[^\d+]/g, ''))}` : '#'}" data-ll="llamar">${ico('telefono')} Llamar</a>`}
+            : L.terminada
+              // Una ventana, una llamada: para volver a llamar hay que registrar esta y abrir otra.
+              ? `<button type="button" class="btn ll-llamar" disabled title="Registra esta llamada para poder hacer otra">${ico('telefono')} Llamar</button>`
+              : `<a class="btn ll-llamar ${tel ? '' : 'desactivado'}" href="${tel ? `tel:${esc(tel.replace(/[^\d+]/g, ''))}` : '#'}" data-ll="llamar">${ico('telefono')} Llamar</a>`}
         </div>
         ${!L.inicio && L.duracion ? `<p class="muted small ll-duracion">Duración: ${fmtDuracion(seg)}</p>` : ''}
+        ${estadoGrabacion(L)}
         <label class="field"><span>Resultado</span>
-          <select name="ll-resultado">${opciones(RESULTADOS_LLAMADA, L.resultado)}</select>
+          <select name="ll-resultado" class="${L.terminada && !L.resultado ? 'falta' : ''}">
+            <option value="" ${L.resultado ? '' : 'selected'}>Sin completar</option>
+            ${opciones(RESULTADOS_LLAMADA, L.resultado)}
+          </select>
         </label>
-        <div class="field"><span>Notas de la llamada</span>${editorHTML('ll-notas', L.notas, 5, 'Qué te ha dicho, próximos pasos…')}</div>
+        <div class="field"><span>Notas de la llamada</span>${editorHTML('ll-notas', L.notas, 3, 'Qué te ha dicho, próximos pasos…')}</div>
       </div>
       <div class="ll-pie">
-        <button type="button" class="btn primary" data-ll="registrar">${t && !t.hecha ? 'Registrar y completar tarea' : 'Registrar llamada'}</button>
+        <button type="button" class="btn primary" data-ll="registrar" ${L.resultado ? '' : 'disabled title="Elige antes el resultado de la llamada"'}>${t && !t.hecha ? 'Registrar y completar tarea' : 'Registrar llamada'}</button>
       </div>`}`;
   activarEditores(ventanaLlamada);
   colocarLlamada();
+}
+
+// La línea de la grabación (todas las llamadas se graban): «Grabando» durante la llamada y «grabada» al colgar.
+/** @param {import('./store.js').Llamada} L */
+function estadoGrabacion(L) {
+  if (L.grabacion && L.inicio) {
+    return `<div class="ll-grabando small"><span class="ll-rec"></span><span>Grabando ${L.grabaSistema ? 'las dos voces' : 'solo tu voz'} · <b>avisa de que la llamada se graba</b></span></div>`;
+  }
+  if (L.grabacion) return `<div class="ll-grabando hecha small">${ico('check-circulo')} Llamada grabada: se guarda al registrarla</div>`;
+  if (L.inicio) return '<div class="muted small">Preparando la grabación…</div>';
+  return '';
 }
 
 // La ventana se puede arrastrar por la cabecera a cualquier sitio de la pantalla (como en HubSpot).
@@ -133,7 +152,17 @@ ventanaLlamada.addEventListener('click', (e) => {
   const que = b.dataset.ll;
   if (que === 'minimizar') L.minimizada = !L.minimizada;
   else if (que === 'cerrar') {
-    if ((L.inicio || L.notas.trim()) && !confirm('¿Cerrar la llamada sin registrarla? Se perderán las notas.')) return;
+    // Con una llamada hecha la ventana no se quita hasta elegir el resultado; entonces cerrar la registra.
+    if (L.inicio) return avisar('Cuelga la llamada antes de cerrar la ventana');
+    if (L.terminada) {
+      if (L.resultado) return registrarLlamada();
+      avisar('Elige el resultado de la llamada antes de cerrar la ventana');
+      L.minimizada = false;
+      pintarLlamada();
+      /** @type {HTMLSelectElement | null} */ ($('[name="ll-resultado"]', ventanaLlamada))?.focus();
+      return;
+    }
+    if (L.notas.trim() && !confirm('¿Cerrar la ventana sin registrar nada? Se perderán las notas.')) return;
     ui.llamadaCerrada = L.taskId;
     cerrarLlamada();
     if (enModoCola()) render();
@@ -147,6 +176,7 @@ ventanaLlamada.addEventListener('click', (e) => {
     // El enlace tel: abre la app de llamadas del ordenador. Se repinta después: un enlace que
     // desaparece de la página durante el clic ya no se abre.
     L.inicio = Date.now();
+    grabarLlamada(L);
     setTimeout(pintarLlamada);
     return;
   } else if (que === 'colgar') colgar();
@@ -170,7 +200,10 @@ ventanaLlamada.addEventListener('input', (e) => {
 
 ventanaLlamada.addEventListener('change', (e) => {
   const sel = /** @type {HTMLSelectElement} */ (e.target);
-  if (sel.name === 'll-resultado' && ui.llamada) ui.llamada.resultado = sel.value;
+  if (sel.name === 'll-resultado' && ui.llamada) {
+    ui.llamada.resultado = sel.value;
+    pintarLlamada(); // activa «Registrar»
+  }
 });
 
 // El contador de la llamada en curso.

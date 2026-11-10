@@ -1,5 +1,5 @@
 // Empresas: consultas sobre db.companies y sus propiedades visibles.
-import { esNurturing, ESTADOS_LEAD, NURTURING_REASONS, PROPS_EMPRESA } from './schema.js';
+import { CAMPOS_FIJOS_EMPRESA, esNurturing, ESTADOS_LEAD, NURTURING_REASONS, PROPS_EMPRESA } from './schema.js';
 import { ahora, uid } from '../../shared/lib/text.js';
 import { db } from '../../shared/state.js';
 
@@ -49,6 +49,12 @@ export const propVisible = (p) => !(db.settings.propsEmpresaOcultas || []).inclu
 export const propsVisibles = () => propsEmpresa().filter(propVisible);
 /** Una propiedad por su id (las fijas siempre existen). @param {string} id */
 export const propEmpresa = (id) => /** @type {Campo} */ (propsEmpresa().find((p) => p.id === id));
+/**
+ * Cualquier campo de la empresa que se edita en la ficha: nombre, notas o una propiedad.
+ * @param {string | undefined} id
+ * @returns {Campo | undefined}
+ */
+export const campoEmpresa = (id) => CAMPOS_FIJOS_EMPRESA.find((p) => p.id === id) || propsEmpresa().find((p) => p.id === id);
 /** @param {string | undefined} id */
 export const estadoLeadDe = (id) => ESTADOS_LEAD.find((x) => x.id === id);
 

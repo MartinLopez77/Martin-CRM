@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { exec } from 'node:child_process';
 import { RAIZ, leerDatos, guardarDatos } from './storage.js';
+import { atenderGrabacion } from './grabaciones.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const URL_APP = `http://localhost:${PORT}`;
@@ -18,6 +19,7 @@ const MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
 };
 
 /**
@@ -100,6 +102,9 @@ const server = http.createServer((req, res) => {
     if (req.method === 'PUT') return recibirDatos(req, res);
     return enviarJSON(res, 405, { error: 'Método no permitido' });
   }
+
+  const grabacion = /^\/api\/grabaciones\/([^/]+)$/.exec(pathname);
+  if (grabacion) return atenderGrabacion(req, res, grabacion[1]);
 
   if (req.method !== 'GET') {
     res.writeHead(405);

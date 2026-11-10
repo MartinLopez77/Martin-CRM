@@ -1,6 +1,7 @@
 // Trozos de HTML de los formularios.
 import { esc } from '../lib/text.js';
 import { ATAJOS_FECHA, fechaAtajo } from '../lib/dates.js';
+import { ico } from './icons.js';
 
 /** @typedef {{ id: string, label: string }} Opcion */
 
@@ -34,6 +35,16 @@ export const opcion = (valor, label, actual) => `<option value="${esc(valor)}" $
  * @param {string} valor HTML
  */
 export const dato = (label, valor) => (valor ? `<dt>${esc(label)}</dt><dd>${valor}</dd>` : '');
+
+/**
+ * Una fila «etiqueta: valor» que se edita pulsándola (aunque esté vacía). `atributos` lleva el
+ * data-action y los data-* con los que la feature sabe qué campo es.
+ * @param {string} label
+ * @param {string} valor HTML (vacío: «—»)
+ * @param {string} atributos
+ */
+export const datoEditable = (label, valor, atributos) =>
+  `<dt>${esc(label)}</dt><dd class="editable" ${atributos} title="Pulsa para editar">${valor || '<span class="muted">—</span>'}<span class="editable-lapiz" aria-hidden="true">${ico('editar')}</span></dd>`;
 
 /**
  * Campo de fecha con desplegable de atajos (mañana, en 3 días, la semana que viene…).

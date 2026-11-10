@@ -1,17 +1,18 @@
 // Contactos: botones (data-action) y desplegables de estado y propietario.
-import { ESTADOS } from './schema.js';
+import { CAMPOS_CONTACTO, ESTADOS } from './schema.js';
 import { borrarContactos, cambiarContacto, cargarVista, contactoExistente, seleccionados, vistaActual } from './store.js';
 import { modalMasivo, modalVista, renderTablaContactos } from './views/list.js';
 import { modalContacto } from './views/modal.js';
 import { modalInscribir } from '../sequences/views.js';
 import { opcionesUsuarios, YO } from '../team/store.js';
 import { registrarAcciones } from '../../shared/actions.js';
-import { ahora, plural } from '../../shared/lib/text.js';
+import { ahora, normalizar, plural } from '../../shared/lib/text.js';
 import { guardar } from '../../shared/persistence.js';
 import { render } from '../../shared/router.js';
 import { db, ui } from '../../shared/state.js';
 import { $, app } from '../../shared/ui/dom.js';
 import { campo, opciones } from '../../shared/ui/html.js';
+import { editarDato } from '../../shared/ui/editar-dato.js';
 import { avisar } from '../../shared/ui/toast.js';
 
 app.addEventListener('change', (e) => {
@@ -78,9 +79,29 @@ registrarAcciones({
     render();
   },
   'mandar-email': () => {
-    ui.fichaTab = 'correo';
+    ui.fichaTab = 'canales';
+    ui.canal = 'correo';
     render();
     $('.correo-escribir [name=asunto]', app)?.focus();
   },
   'ficha-tab': (el) => { ui.fichaTab = /** @type {string} */ (el.dataset.tab); ui.editor = null; render(); },
+  'ficha-canal': (el) => { ui.canal = el.dataset.canal; render(); },
+  // Un dato de la tarjeta, pulsándolo: se edita en un recuadro y queda en la nota «Cambio de datos».
+  'editar-campo-contacto': (el) => {
+    const c = contactoExistente(el.dataset.id);
+    const campo = CAMPOS_CONTACTO.find((p) => p.id === el.dataset.campo);
+    if (!campo) return;
+    editarDato(el, campo, /** @type {Record<string, unknown>} */ (c)[campo.id], (valor) => {
+      if (campo.obligatorio && !valor) return false;
+      const email = campo.id === 'email' && normalizar(valor);
+      const repetido = email && db.contacts.find((x) => x !== c && normalizar(x.email) === email);
+      if (repetido) {
+        alert(`Ya existe un contacto con el email ${valor}: ${repetido.nombre}.`);
+        return false;
+      }
+      cambiarContacto(c, () => { /** @type {Record<string, unknown>} */ (c)[campo.id] = valor; });
+      guardar();
+      render();
+    });
+  },
 });

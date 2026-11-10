@@ -24,6 +24,8 @@
  * @property {string} zonaSecundaria
  * @property {string[]} propsEmpresaOcultas propiedades de empresa desactivadas
  * @property {import('../features/companies/schema.js').PropiedadPropia[]} propsEmpresaExtra propiedades de empresa propias
+ * @property {string} [entradaLlamada] entrada de audio con la voz del otro al grabar llamadas: '' automático
+ *   (la «Mezcla estéreo»), 'ninguna' (solo el micrófono) o el id de la entrada
  */
 
 /** @type {Pick<Ajustes, 'horaSecundaria' | 'zonaSecundaria'>} */
@@ -47,14 +49,15 @@ export const ui = {
   seleccion: new Set(),
   empresasQ: '',
   empresasEstado: '', // filtro por estado lead en la tabla de empresas
-  fichaTab: 'notas', // pestaña de la columna central de la ficha: notas, tareas, whatsapp, correo
+  fichaTab: 'notas', // pestaña de la columna central de la ficha: notas, tareas, canales
+  canal: 'whatsapp', // canal elegido en la pestaña Canales: whatsapp o correo
+  dashboardPeriodo: '30', // periodo del dashboard (id de PERIODOS en features/dashboard/store.js)
   tareasVista: 'bandeja',
   tareasQ: '',
   /** @type {{ clave: string, fecha?: string } | null} editor «Añadir tarea» abierto (clave: el grupo en el que está) */
   editor: null,
   /** @type {string | null} */
   contactoActual: null,
-  notaFiltro: '',
   notasContactoQ: '',
   /** @type {Set<string>} notas desplegadas */
   notasAbiertas: new Set(),

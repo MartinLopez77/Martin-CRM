@@ -4,5 +4,10 @@
 .ajustes h3 { margin: 0; }
 .ajustes p { margin: 0; }
 .ajustes .field { max-width: 320px; }
-.ajustes .field.apagado { opacity: .5; }
+.ajustes .field.apagado, .ajustes .check.apagado { opacity: .5; }
 .ajustes-ejemplo { padding: 8px 12px; border-radius: 8px; background: var(--surface-2); }
+#aj-entrada { max-width: 100%; }
+.ajustes .field:has(#aj-entrada) { max-width: 480px; }
+.ajustes-ayuda summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.ajustes-ayuda p, .ajustes-ayuda ol { margin: 8px 0 0; color: var(--texto-2); }
+.ajustes-ayuda ol { padding-left: 1.4em; }

@@ -12,3 +12,12 @@ registrarAcciones({
     modalAccion(a.contactId, a);
   },
 });
+
+// Las grabaciones del navegador (webm) no dicen cuánto duran: el reproductor no mostraría la duración
+// ni dejaría saltar. Se le manda al final para que la calcule y se vuelve al principio.
+document.addEventListener('loadedmetadata', (e) => {
+  const audio = e.target;
+  if (!(audio instanceof HTMLAudioElement) || audio.duration !== Infinity) return;
+  audio.addEventListener('durationchange', () => (audio.currentTime = 0), { once: true });
+  audio.currentTime = 1e101;
+}, true);

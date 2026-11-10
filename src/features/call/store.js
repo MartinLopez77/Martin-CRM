@@ -1,5 +1,8 @@
 // Llamadas: resultado, duración y registrar la llamada como acción (y nota).
 import { pintarLlamada } from './window.js';
+import { descartarGrabacion, empezarGrabacion, pararGrabacion, subirGrabacion } from './grabadora.js';
+// Para Ajustes (elegir la entrada del audio del ordenador).
+export { entradasDeAudio, esEntradaDelSistema, pedirPermisoMicro } from './grabadora.js';
 import { cambiarContacto, contactoExistente, tocar } from '../contacts/store.js';
 import { completarEnCola, enModoCola, tareaColaActual } from '../queue/store.js';
 import { completarTarea, tarea } from '../tasks/store.js';
@@ -18,10 +21,16 @@ import { avisar } from '../../shared/ui/toast.js';
  * @property {string} telefono
  * @property {number | null} inicio cuándo empezó (ms); null si no está en curso
  * @property {number} duracion segundos ya hablados (sin la parte en curso)
- * @property {string} resultado id de RESULTADOS_LLAMADA
+ * @property {boolean} terminada ya se llamó y se colgó: no se puede volver a llamar desde esta ventana
+ * @property {string} resultado id de RESULTADOS_LLAMADA; '' = sin completar (obligatorio para registrarla)
  * @property {string} notas
  * @property {boolean} minimizada
+ * @property {string | null} grabacion id de la grabación de esta llamada, si se está grabando o ya se grabó
+ * @property {boolean} grabaSistema si la grabación lleva también el audio del ordenador (la voz del otro)
  */
+
+/** Hay una llamada hecha (o en curso) que aún no se ha registrado. @param {Llamada | null | undefined} L */
+export const llamadaPendiente = (L) => !!L && (!!L.inicio || L.terminada);
 
 export const RESULTADOS_LLAMADA = [
   { id: 'conectada', label: 'Conectada', accion: 'llamada' },
@@ -42,19 +51,40 @@ export const fmtDuracion = (seg) => `${pad(Math.floor(seg / 60))}:${pad(seg % 60
 
 /** Abre la ventana de llamada con un contacto (y la tarea de la que viene). @param {string} contactId @param {string | null} [taskId] */
 export function abrirLlamada(contactId, taskId = null) {
-  if (ui.llamada?.inicio && ui.llamada.contactId !== contactId) {
-    avisar('Hay una llamada en curso: cuélgala o regístrala primero');
+  // Una llamada hecha no se pierde: hasta registrarla, la ventana es suya.
+  if (llamadaPendiente(ui.llamada)) {
+    const L = /** @type {Llamada} */ (ui.llamada);
+    L.minimizada = false;
+    pintarLlamada();
+    if (L.contactId !== contactId) avisar(L.inicio ? 'Hay una llamada en curso: cuélgala y regístrala primero' : 'Elige el resultado de la llamada anterior y regístrala primero');
     return;
   }
   const c = contactoExistente(contactId);
-  ui.llamada = { contactId, taskId, telefono: c.telefono || '', inicio: null, duracion: 0, resultado: 'conectada', notas: '', minimizada: false };
+  descartarGrabacion();
+  ui.llamada = {
+    contactId, taskId, telefono: c.telefono || '', inicio: null, duracion: 0, terminada: false, resultado: '', notas: '', minimizada: false,
+    grabacion: null, grabaSistema: false,
+  };
   ui.llamadaCerrada = null;
   pintarLlamada();
 }
 
 export function cerrarLlamada() {
+  descartarGrabacion();
   ui.llamada = null;
   pintarLlamada();
+}
+
+/** Empieza a grabar la llamada `L` (todas las llamadas se graban). @param {Llamada} L */
+export function grabarLlamada(L) {
+  empezarGrabacion(db.settings.entradaLlamada || '').then((g) => {
+    // Mientras se daba el permiso se pudo colgar o cerrar la llamada.
+    if (ui.llamada !== L || !L.inicio) return descartarGrabacion();
+    if (!g) return avisar('No se graba: el navegador no tiene permiso para usar el micrófono');
+    L.grabacion = g.id;
+    L.grabaSistema = g.sistema;
+    pintarLlamada();
+  });
 }
 
 export function colgar() {
@@ -62,12 +92,33 @@ export function colgar() {
   if (!L?.inicio) return;
   L.duracion = segundosLlamada(L);
   L.inicio = null;
+  L.terminada = true;
+  pararGrabacion();
+}
+
+// Sube la grabación de una llamada ya registrada. Si no se puede guardar, la acción se queda sin ella.
+/** @param {string} id */
+function guardarGrabacion(id) {
+  subirGrabacion().then((ok) => {
+    if (ok) return;
+    const a = db.actions.find((x) => x.grabacion === id);
+    if (a) {
+      delete a.grabacion;
+      guardar();
+      render();
+    }
+    avisar('No se ha podido guardar la grabación de la llamada');
+  });
 }
 
 // Guarda la llamada como acción (y nota, si hay notas). Si viene de una tarea, la completa.
 export function registrarLlamada() {
   const L = ui.llamada;
   if (!L) return;
+  if (!L.resultado) {
+    avisar('Elige el resultado de la llamada');
+    return;
+  }
   colgar();
   const c = contactoExistente(L.contactId);
   const t = L.taskId ? tarea(L.taskId) : undefined;
@@ -79,6 +130,12 @@ export function registrarLlamada() {
     hora: horaActual(),
     resumen: r.id === 'conectada' ? `${t ? t.titulo : 'Llamada'}${dur}` : `${r.label}${t ? ` · ${t.titulo}` : ''}`,
   };
+  datos.resultado = r.id;
+  if (L.duracion) datos.duracion = L.duracion;
+  if (L.grabacion) {
+    datos.grabacion = L.grabacion;
+    guardarGrabacion(L.grabacion); // antes de cerrar la ventana, que descarta lo que no se haya guardado
+  }
   if (!c.telefono && L.telefono.trim()) cambiarContacto(c, () => (c.telefono = L.telefono.trim()));
   const notas = L.notas.trim();
   const enCola = t && tareaColaActual()?.id === t.id && enModoCola();

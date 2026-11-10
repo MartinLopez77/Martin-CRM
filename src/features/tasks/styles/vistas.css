@@ -1,6 +1,6 @@
 /* Tareas: vistas propias */
 .td-vista-nueva {
-  font: inherit; font-weight: 500; color: var(--td-accion);
+  font: inherit; font-weight: 600; color: var(--td-accion);
   border: 1px dashed color-mix(in srgb, var(--td-accion) 45%, transparent); background: transparent; border-radius: 6px;
   padding: 4px 10px; cursor: pointer;
 }

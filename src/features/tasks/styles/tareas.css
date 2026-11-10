@@ -8,13 +8,13 @@
 .td-barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
 .td-vistas { display: flex; gap: 2px; flex-wrap: wrap; }
 .td-vistas button {
-  font: inherit; font-weight: 500; color: var(--muted);
+  font: inherit; font-weight: 600; color: var(--muted);
   border: 0; background: transparent; border-radius: 6px;
   padding: 5px 10px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
 }
 .td-vistas button:hover { background: var(--surface-2); color: var(--text); }
-.td-vistas button.active { background: color-mix(in srgb, var(--td-accion) 12%, transparent); color: var(--td-accion); }
+.td-vistas button.active { background: var(--naranja-fondo); color: var(--text); box-shadow: inset 0 0 0 1px var(--naranja-borde), var(--shadow-sm); }
 .td-vistas small { font-size: 11.5px; color: var(--muted); font-weight: 400; }
 .td-buscar { width: 230px; min-height: 32px; padding: 4px 10px; font-size: 13px; background: var(--surface-2); border-color: transparent; }
 .td-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -36,7 +36,7 @@ kbd {
 .td-grupo.vencidas .td-grupo-titulo > span:first-child { color: var(--text); }
 .td-reprogramar {
   margin-left: auto; border: 0; background: none; padding: 0; cursor: pointer;
-  font: inherit; font-size: 13px; font-weight: 500; color: var(--td-accion);
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--td-accion);
 }
 .td-reprogramar:hover { text-decoration: underline; }
 
@@ -98,7 +98,7 @@ kbd {
   border-radius: 4px; padding: 0 5px; margin-left: 6px; text-decoration: none; display: inline-block;
 }
 .td-cancelar-btn {
-  font: inherit; font-size: 11.5px; line-height: 1.5; font-weight: 500; color: var(--muted);
+  font: inherit; font-size: 11.5px; line-height: 1.5; font-weight: 600; color: var(--muted);
   border: 1px solid var(--border); background: var(--surface); border-radius: 6px;
   padding: 0 7px; cursor: pointer; white-space: nowrap;
 }
@@ -144,7 +144,7 @@ kbd {
 }
 .td-chip:hover { background: var(--surface-2); }
 select.td-chip { padding-right: 4px; }
-.td-chip-fecha.f-vencida, .td-chip-fecha.f-hoy, .td-chip-fecha.f-manana, .td-chip-fecha.f-semana { font-weight: 500; }
+.td-chip-fecha.f-vencida, .td-chip-fecha.f-hoy, .td-chip-fecha.f-manana, .td-chip-fecha.f-semana { font-weight: 600; }
 .td-chip-prio[data-prio="alta"] { color: var(--td-p1); }
 .td-chip-prio[data-prio="media"] { color: var(--td-p2); }
 .td-chip-prio[data-prio="baja"] { color: var(--td-p3); }
@@ -168,7 +168,7 @@ select.td-chip { padding-right: 4px; }
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 30;
   width: 250px; padding: 6px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+  box-shadow: var(--shadow-flotante);
   display: flex; flex-direction: column;
 }
 .td-pop[hidden] { display: none; }

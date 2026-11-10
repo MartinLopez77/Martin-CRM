@@ -1,5 +1,5 @@
 // Cola de tareas («Empezar tareas», como la de HubSpot): en qué tarea se está y cómo avanzar.
-import { cerrarLlamada, registrarLlamada } from '../call/store.js';
+import { cerrarLlamada, llamadaPendiente, registrarLlamada } from '../call/store.js';
 import { contacto, tocar } from '../contacts/store.js';
 import { ACCION_A_NOTA } from '../notes/schema.js';
 import { nota } from '../notes/store.js';
@@ -67,7 +67,7 @@ export function limpiarCola() {
 
 export function salirDeCola() {
   ui.cola = null;
-  if (ui.llamada && !ui.llamada.inicio && !ui.llamada.notas.trim()) cerrarLlamada();
+  if (ui.llamada && !llamadaPendiente(ui.llamada) && !ui.llamada.notas.trim()) cerrarLlamada();
   location.hash = '#/tareas';
 }
 
@@ -150,9 +150,10 @@ export function posponerEnCola() {
   });
 }
 
-// En "Empezar tareas": si la tarea actual es una llamada abierta en la ventana, completar = registrar la llamada.
+// En "Empezar tareas": si ya se ha llamado desde la ventana, completar = registrar la llamada (con su resultado).
 export function completarActualEnCola() {
   const t = ui.cola && tarea(ui.cola.ids[ui.cola.i]);
-  if (t && ui.llamada?.taskId === t.id) registrarLlamada();
-  else completarEnCola();
+  if (t && ui.llamada?.taskId === t.id && llamadaPendiente(ui.llamada)) return registrarLlamada();
+  if (t && ui.llamada?.taskId === t.id) cerrarLlamada(); // la ventana estaba abierta pero no se llegó a llamar
+  completarEnCola();
 }

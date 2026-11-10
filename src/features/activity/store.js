@@ -14,6 +14,14 @@ export function accionExistente(id) {
   return x;
 }
 
+/** URL de la grabación de una llamada (el audio lo guarda el servidor en grabaciones/). @param {string} id */
+export const urlGrabacion = (id) => `/api/grabaciones/${encodeURIComponent(id)}`;
+
+/** Borra del servidor la grabación `id` (al borrar su acción o su contacto). @param {string | null | undefined} id */
+export function borrarGrabacion(id) {
+  if (id) fetch(urlGrabacion(id), { method: 'DELETE' }).catch(() => { /* sin servidor: se queda el archivo */ });
+}
+
 /** Las acciones realizadas con un contacto, de la más reciente a la más antigua. @param {string} id */
 export const accionesDe = (id) =>
   db.actions.filter((a) => a.contactId === id)

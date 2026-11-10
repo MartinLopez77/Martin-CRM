@@ -77,6 +77,12 @@ export const PROPS_EMPRESA = defineCampos([
   { id: 'linkedin', label: 'LinkedIn', tipo: 'url' },
   { id: 'importacion', label: 'Importación', tipo: 'texto', soloLectura: true },
 ]);
+// Nombre y notas: no son propiedades (no se ocultan en Ajustes), pero también se editan desde la ficha.
+export const CAMPOS_FIJOS_EMPRESA = defineCampos([
+  { id: 'nombre', label: 'Nombre', tipo: 'texto', obligatorio: true },
+  { id: 'notas', label: 'Notas', tipo: 'textoLargo' },
+]);
+
 export const TIPOS_PROP = [
   { id: 'texto', label: 'Texto' },
   { id: 'textoLargo', label: 'Texto largo' },

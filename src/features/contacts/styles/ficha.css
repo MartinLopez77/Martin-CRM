@@ -1,6 +1,6 @@
 /* ---------- Ficha de contacto ---------- */
 
-.back { display: inline-block; margin-bottom: 12px; color: var(--muted); font-weight: 500; }
+.back { display: inline-block; margin-bottom: 12px; color: var(--muted); font-weight: 600; }
 
 .datos { display: grid; grid-template-columns: 82px 1fr; gap: 8px 10px; margin: 0; font-size: 13px; }
 .datos dt { color: var(--muted); }
@@ -9,7 +9,7 @@
 .tipos { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .notas { display: flex; flex-direction: column; gap: 12px; }
-.nota { padding: 14px 16px; border-left: 4px solid var(--c); }
+.nota { --c: var(--accent); padding: 14px 16px; border-left: 4px solid var(--c); }
 .nota.fijada { background: color-mix(in srgb, var(--c) 6%, var(--surface)); }
 .nota header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .nota time { font-size: 12.5px; color: var(--muted); }

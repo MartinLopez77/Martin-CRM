@@ -8,7 +8,9 @@ export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 
 // CRM_DATA_FILE permite usar otro archivo de datos (los tests usan uno ficticio); sus copias van a su lado.
 const DATA_FILE = process.env.CRM_DATA_FILE ? path.resolve(process.env.CRM_DATA_FILE) : path.join(RAIZ, 'data.json');
-const BACKUP_DIR = path.join(path.dirname(DATA_FILE), 'backups');
+/** Carpeta donde está el archivo de datos (sus copias y las grabaciones van a su lado). */
+export const CARPETA_DATOS = path.dirname(DATA_FILE);
+const BACKUP_DIR = path.join(CARPETA_DATOS, 'backups');
 const MAX_BACKUPS = 30;
 
 /** @returns {Record<string, unknown>} */

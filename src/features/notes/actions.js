@@ -7,7 +7,6 @@ import { render } from '../../shared/router.js';
 import { db, ui } from '../../shared/state.js';
 
 registrarAcciones({
-  'filtro-nota': (el) => { ui.notaFiltro = el.dataset.tipo; render(); },
   'toggle-nota': (el) => {
     const id = el.dataset.id;
     if (ui.notasAbiertas.has(id)) ui.notasAbiertas.delete(id);
@@ -17,7 +16,7 @@ registrarAcciones({
   },
   'ver-nota': (el) => {
     const id = el.dataset.id;
-    ui.notaFiltro = '';
+    ui.fichaTab = 'notas';
     ui.notasContactoQ = '';
     ui.notasAbiertas.add(id);
     render();

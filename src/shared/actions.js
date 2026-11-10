@@ -21,8 +21,8 @@ app.addEventListener('click', (e) => {
   const objetivo = /** @type {Element} */ (e.target);
   const el = /** @type {HTMLElement | null} */ (objetivo.closest('[data-action]'));
   if (!el) return;
-  // Un enlace, select o botón dentro de un elemento clicable (p. ej. una fila) hace lo suyo, no abre la fila.
-  const interactivo = objetivo.closest('a, select, input, textarea, button, label');
+  // Un enlace, select, botón o reproductor dentro de un elemento clicable (p. ej. una fila) hace lo suyo, no abre la fila.
+  const interactivo = objetivo.closest('a, select, input, textarea, button, label, audio');
   if (interactivo && interactivo !== el && el.contains(interactivo)) return;
   acciones[/** @type {string} */ (el.dataset.action)]?.(/** @type {ElementoAccion} */ (el), e);
 });

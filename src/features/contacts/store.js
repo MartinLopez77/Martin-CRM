@@ -1,7 +1,7 @@
 // Contactos: consultas y cambios sobre db.contacts (vistas guardadas, filtros, orden y notas de cambio).
 import { CAMPOS_HISTORIAL, ESTADOS, FILTROS_VACIOS, ORDEN_DEFECTO, VISTAS_BASE } from './schema.js';
 import { empresaDe } from '../companies/store.js';
-import { accionesDe } from '../activity/store.js';
+import { accionesDe, borrarGrabacion } from '../activity/store.js';
 import { pendientesDe, proximaTarea } from '../tasks/store.js';
 import { inscripcionActiva } from '../sequences/store.js';
 import { nombreUsuario } from '../team/store.js';
@@ -143,6 +143,7 @@ export function borrarContactos(ids) {
   db.contacts = db.contacts.filter((c) => !quitar.has(c.id));
   db.notes = db.notes.filter((n) => !quitar.has(n.contactId));
   db.tasks = db.tasks.filter((t) => !quitar.has(t.contactId));
+  db.actions.filter((a) => quitar.has(a.contactId)).forEach((a) => borrarGrabacion(a.grabacion));
   db.actions = db.actions.filter((a) => !quitar.has(a.contactId));
   db.enrollments = db.enrollments.filter((e) => !quitar.has(e.contactId));
 }

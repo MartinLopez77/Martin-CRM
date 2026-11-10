@@ -23,6 +23,7 @@ export function alAbrirModal(fn) {
  * @param {(datos: DatosForm) => unknown} alGuardar devuelve false para no cerrar el modal
  */
 export function abrirModal(titulo, camposHTML, alGuardar) {
+  modal.classList.remove('ampliado');
   modal.innerHTML = `
     <form class="modal-form">
       <h2>${esc(titulo)}</h2>
@@ -65,12 +66,15 @@ modal.addEventListener('click', (e) => {
   if (e.target === modal) modal.close();
 });
 
-// Esc con un editor a pantalla completa dentro del modal: sale de pantalla completa en vez de cerrar el modal.
+// Esc con la ventana ampliada: vuelve a su tamaño en vez de cerrarla.
 modal.addEventListener('cancel', (e) => {
-  const ta = /** @type {HTMLTextAreaElement | null} */ (modal.querySelector('.editor.completa textarea'));
+  const ta = modal.classList.contains('ampliado') ? /** @type {HTMLTextAreaElement | null} */ (modal.querySelector('.editor textarea')) : null;
   if (ta) {
     e.preventDefault();
     comandoEditor(ta, 'pantalla');
   }
 });
-modal.addEventListener('close', ajustarScroll);
+modal.addEventListener('close', () => {
+  modal.classList.remove('ampliado');
+  ajustarScroll();
+});

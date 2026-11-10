@@ -1,6 +1,7 @@
 // Ajustes (#/ajustes): hora secundaria, propiedades de empresa e historial de importaciones.
 import { TIPOS_PROP } from '../companies/schema.js';
 import { propsEmpresa, propVisible } from '../companies/store.js';
+import { entradasDeAudio, esEntradaDelSistema, pedirPermisoMicro } from '../call/store.js';
 import { enLocal, ZONAS_SECUNDARIAS, zonaSecundaria } from './horas.js';
 import { fmtFecha, horaActual } from '../../shared/lib/dates.js';
 import { esc, uid } from '../../shared/lib/text.js';
@@ -28,6 +29,28 @@ export function vistaAjustes() {
           </select>
         </label>
         <p class="ajustes-ejemplo small">Así se verá: España <b>${horaActual()}</b> ${z ? enLocal(horaActual(z.id)) : '<span class="muted">(sin hora secundaria)</span>'}</p>
+      </section>
+
+      <section class="card pad ajustes">
+        <h3>${ico('telefono')} Grabación de llamadas</h3>
+        <p class="muted small">Todas las llamadas que se hacen desde la ventana de llamada se graban, y la grabación queda en la llamada registrada, en la ficha del contacto. Recuerda avisar de que la llamada se graba.</p>
+        <label class="field"><span>Voz del otro (audio del ordenador)</span>
+          <select id="aj-entrada">
+            <option value="" ${!s.entradaLlamada ? 'selected' : ''}>Automático: la «Mezcla estéreo» si el ordenador la tiene</option>
+            <option value="ninguna" ${s.entradaLlamada === 'ninguna' ? 'selected' : ''}>Ninguna: grabar solo mi voz</option>
+          </select>
+        </label>
+        <p class="muted small" id="aj-entrada-estado">Buscando las entradas de audio…</p>
+        <details class="small ajustes-ayuda">
+          <summary>Cómo activar la «Mezcla estéreo» en Windows</summary>
+          <p>La voz del otro se graba si la llamada suena por el ordenador (Enlace Móvil, Teams…) y Windows tiene activada la entrada que recoge ese sonido:</p>
+          <ol>
+            <li>Configuración → Sistema → Sonido → <b>Más opciones de sonido</b>.</li>
+            <li>Pestaña <b>Grabar</b> → clic derecho en un hueco → <b>Mostrar dispositivos deshabilitados</b>.</li>
+            <li>Clic derecho en <b>Mezcla estéreo</b> → <b>Habilitar</b>.</li>
+          </ol>
+          <p>Si no aparece, tu tarjeta de sonido no la trae: se puede instalar un cable virtual gratuito (VB-Cable) y elegirlo aquí.</p>
+        </details>
       </section>
 
       <section class="card pad ajustes">
@@ -65,6 +88,8 @@ export function vistaAjustes() {
       </section>
     </div>`;
   $('#aj-secundaria').addEventListener('change', (/** @type {Event} */ e) => { s.horaSecundaria = /** @type {HTMLInputElement} */ (e.target).checked; guardar(); render(); });
+  $('#aj-entrada').addEventListener('change', (/** @type {Event} */ e) => { s.entradaLlamada = /** @type {HTMLSelectElement} */ (e.target).value; guardar(); pintarEntradas(); });
+  pintarEntradas();
   $('#aj-zona').addEventListener('change', (/** @type {Event} */ e) => { s.zonaSecundaria = /** @type {HTMLSelectElement} */ (e.target).value; guardar(); render(); });
   app.querySelectorAll('.aj-prop').forEach((nodo) => {
     const cb = /** @type {HTMLInputElement & { dataset: Record<string, string> }} */ (nodo);
@@ -76,6 +101,29 @@ export function vistaAjustes() {
       guardar();
     });
   });
+}
+
+// Las entradas de audio del ordenador en el desplegable de la grabación (se buscan al abrir Ajustes).
+async function pintarEntradas() {
+  const sel = /** @type {HTMLSelectElement | null} */ ($('#aj-entrada'));
+  const estado = $('#aj-entrada-estado');
+  if (!sel || !estado) return;
+  const lista = await entradasDeAudio();
+  const s = db.settings;
+  const sinNombres = lista.some((x) => !x.label);
+  sel.querySelectorAll('option[data-entrada]').forEach((o) => o.remove());
+  lista.filter((x) => x.label).forEach((x) => sel.insertAdjacentHTML('beforeend', `<option data-entrada value="${esc(x.id)}" ${x.id === s.entradaLlamada ? 'selected' : ''}>${esc(x.label)}</option>`));
+  const detectada = lista.find((x) => esEntradaDelSistema(x.label));
+  if (sinNombres) {
+    estado.innerHTML = 'Para ver las entradas, el navegador necesita permiso para el micrófono. <button type="button" class="link-btn" id="aj-permiso">Dar permiso</button>';
+    $('#aj-permiso').addEventListener('click', async () => { if (await pedirPermisoMicro()) pintarEntradas(); });
+  } else if (s.entradaLlamada === 'ninguna') {
+    estado.textContent = 'Se graba solo tu voz.';
+  } else if (s.entradaLlamada && lista.some((x) => x.id === s.entradaLlamada)) {
+    estado.textContent = 'Se graba tu voz y la de esa entrada.';
+  } else {
+    estado.innerHTML = detectada ? `Se grabarán las dos voces: usando <b>${esc(detectada.label)}</b>.` : 'No hay ninguna «Mezcla estéreo» activada: se grabará solo tu voz. Abajo se explica cómo activarla.';
+  }
 }
 
 // Añadir (o editar) una propiedad propia de empresa.

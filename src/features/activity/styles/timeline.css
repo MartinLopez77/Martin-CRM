@@ -25,9 +25,10 @@
 .tl-cabecera time { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .tl-texto { font-size: 12.5px; color: var(--muted); margin-top: 1px; overflow-wrap: anywhere; }
 .tl-cuerpo .link-btn { margin-top: 3px; }
+.tl-audio { display: block; width: 100%; height: 34px; margin-top: 6px; cursor: default; }
 .tl-item.futura { color: var(--muted); }
 .tl-item.futura .tl-punto { filter: grayscale(1); opacity: .6; background: var(--surface-2); border-style: dashed; border-color: var(--border); }
-.tl-item.futura .tl-cabecera strong { color: var(--muted); font-weight: 500; }
+.tl-item.futura .tl-cabecera strong { color: var(--muted); font-weight: 600; }
 .tl-item.futura::before { background: repeating-linear-gradient(to bottom, var(--border) 0 4px, transparent 4px 8px); }
 .tl-botones { display: flex; flex-direction: column; gap: 4px; align-self: flex-start; }
 .tl-botones .btn { opacity: .55; padding: 2px 8px; }

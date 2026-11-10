@@ -1,9 +1,4 @@
-/* ---------- Notas: botones, tipo y fijadas ---------- */
+/* ---------- Notas: botones y fijadas ---------- */
 
 .nota-acciones .icon-btn { opacity: .35; }
 .nota:hover .nota-acciones .icon-btn, .nota-acciones .icon-btn.on { opacity: 1; }
-.tipo-pill {
-  font-size: 12px; font-weight: 600; color: var(--c);
-  background: color-mix(in srgb, var(--c) 13%, transparent);
-  padding: 1px 9px; border-radius: 999px;
-}

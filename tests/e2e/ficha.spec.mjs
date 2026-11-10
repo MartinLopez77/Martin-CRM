@@ -1,9 +1,10 @@
 import { test, expect, datosGuardados, esperarGuardado } from './helpers.mjs';
 
-test('ficha: pestañas Notas, Tareas, WhatsApp y Correo', async ({ page }) => {
+test('ficha: pestañas Notas, Tareas y Canales (WhatsApp y correo)', async ({ page }) => {
   await page.goto('/#/contacto/c-bruno');
   const tabs = page.locator('.ficha-tabs .vista-tab');
-  await expect(tabs).toHaveCount(4);
+  await expect(tabs).toHaveCount(3);
+  await expect(tabs.nth(2)).toHaveText(/Canales/);
   await expect(tabs.nth(1)).toContainText('Tareas');
   await expect(tabs.nth(1)).toContainText('2');
 
@@ -12,11 +13,16 @@ test('ficha: pestañas Notas, Tareas, WhatsApp y Correo', async ({ page }) => {
 
   await tabs.nth(2).click();
   await expect(page.locator('.chat')).toBeVisible();
-  await expect(page.locator('.etq-borrador').first()).toBeVisible();
+  await expect(page.locator('#ficha-panel')).not.toContainText('Borrador');
+  await page.locator('.canales-selector').getByRole('tab', { name: /Correo/ }).click();
+  await expect(page.locator('.correo-escribir')).toBeVisible();
+  await page.locator('.canales-selector').getByRole('tab', { name: /WhatsApp/ }).click();
+  await expect(page.locator('.chat')).toBeVisible();
 
-  // Correo: «Enviar» registra la acción (el mailto: se ignora en el test).
+  // El botón Email de la tarjeta lleva a Canales › Correo. «Enviar» registra la acción (el mailto: se ignora en el test).
   await page.getByRole('button', { name: 'Email' }).first().click();
-  await expect(page.locator('.vista-tab.active')).toContainText('Correo');
+  await expect(page.locator('.vista-tab.active')).toContainText('Canales');
+  await expect(page.locator('.canales-selector .active')).toContainText('Correo');
   await page.route('mailto:*', (r) => r.abort());
   await page.locator('.correo-escribir [name=asunto]').fill('Propuesta Diga');
   await page.locator('.correo-escribir [name=cuerpo]').fill('Hola Bruno');
@@ -39,7 +45,7 @@ test('ficha: cambiar estado y editar datos deja notas de «Cambio de datos»', a
   const nota = page.locator('.nota', { hasText: 'Directora → CEO' });
   await expect(nota).toBeVisible();
   await expect(nota).toContainText('Teléfono');
-  await expect(page.locator('.chip', { hasText: 'Cambio de datos' })).toContainText('2');
+  await expect(page.locator('.nota', { hasText: 'Cambio de datos' })).toHaveCount(2);
 
   await esperarGuardado(page);
   const cambios = datosGuardados().notes.filter((/** @type {any} */ n) => n.contactId === 'c-ana' && n.tipo === 'cambio');
@@ -78,4 +84,61 @@ test('eliminar contacto borra también sus notas, tareas y acciones', async ({ p
   const d = datosGuardados();
   expect(d.contacts.some((/** @type {any} */ c) => c.id === 'c-ana')).toBe(false);
   for (const col of ['notes', 'tasks', 'actions']) expect(d[col].some((/** @type {any} */ x) => x.contactId === 'c-ana')).toBe(false);
+});
+
+test('ficha: los datos de la tarjeta se editan pulsándolos; la empresa no', async ({ page }) => {
+  page.on('dialog', (d) => d.accept());
+  await page.goto('/#/contacto/c-carla');
+  const tarjeta = page.locator('.tarjeta-contacto');
+  const pop = page.locator('.dato-pop');
+
+  // Un campo vacío también se puede rellenar: se abre un recuadro con el campo
+  await tarjeta.locator('dd.editable[data-campo="email"]').click();
+  await expect(pop).toBeVisible();
+  await pop.locator('[name=valor]').fill('carla@clinicaluz.example');
+  await pop.locator('[name=valor]').press('Enter');
+  await expect(pop).toHaveCount(0);
+  await expect(tarjeta.locator('dd[data-campo="email"]')).toContainText('carla@clinicaluz.example');
+
+  // Esc cancela sin guardar
+  await tarjeta.locator('h1.editable').click();
+  await pop.locator('[name=valor]').fill('Otro nombre');
+  await pop.locator('[name=valor]').press('Escape');
+  await expect(pop).toHaveCount(0);
+  await expect(tarjeta.locator('h1')).toHaveText('Carla Vidal');
+
+  // Si el dato es un enlace (mailto:), el enlace hace lo suyo y se edita con el lápiz.
+  // Un email que ya tiene otro contacto no se acepta.
+  await tarjeta.locator('dd.editable[data-campo="email"] .editable-lapiz').click();
+  await pop.locator('[name=valor]').fill('ana@clinicaluz.example');
+  await pop.getByRole('button', { name: 'Guardar' }).click();
+  await expect(pop).toBeVisible();
+  await pop.getByRole('button', { name: 'Cancelar' }).click();
+
+  // La empresa relaciona el contacto con la empresa: es fija
+  await expect(tarjeta.locator('dt', { hasText: 'Empresa' }).locator('+ dd')).not.toHaveClass(/editable/);
+
+  await esperarGuardado(page);
+  const c = datosGuardados().contacts.find((/** @type {any} */ x) => x.id === 'c-carla');
+  expect(c.email).toBe('carla@clinicaluz.example');
+  expect(datosGuardados().notes.some((/** @type {any} */ n) => n.contactId === 'c-carla' && n.tipo === 'cambio')).toBe(true);
+});
+
+test('empresa: sus datos se editan pulsándolos (texto y desplegable)', async ({ page }) => {
+  await page.goto('/#/empresa/e-luz');
+  const tarjeta = page.locator('.tarjeta-contacto');
+  await tarjeta.locator('dd.editable[data-campo="sector"]').click();
+  await page.locator('.dato-pop [name=valor]').fill('Clínicas dentales');
+  await page.locator('.dato-pop [name=valor]').press('Enter');
+  await expect(tarjeta.locator('dd[data-campo="sector"]')).toContainText('Clínicas dentales');
+
+  // Un desplegable guarda en cuanto se elige
+  await tarjeta.locator('dd.editable[data-campo="estadoLead"]').click();
+  await page.locator('.dato-pop select[name=valor]').selectOption('meeting');
+  await expect(tarjeta.locator('dd[data-campo="estadoLead"]')).toContainText('Meeting');
+
+  await esperarGuardado(page);
+  const e = datosGuardados().companies.find((/** @type {any} */ x) => x.id === 'e-luz');
+  expect(e.sector).toBe('Clínicas dentales');
+  expect(e.estadoLead).toBe('meeting');
 });
