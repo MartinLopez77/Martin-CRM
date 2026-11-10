@@ -3,6 +3,7 @@ import { pintarLlamada } from './window.js';
 import { descartarGrabacion, empezarGrabacion, pararGrabacion, subirGrabacion } from './grabadora.js';
 // Para Ajustes (elegir la entrada del audio del ordenador).
 export { entradasDeAudio, esEntradaDelSistema, pedirPermisoMicro } from './grabadora.js';
+import { grabacionesSubiendo, urlGrabacion } from '../activity/store.js';
 import { cambiarContacto, contactoExistente, tocar } from '../contacts/store.js';
 import { completarEnCola, enModoCola, tareaColaActual } from '../queue/store.js';
 import { completarTarea, tarea } from '../tasks/store.js';
@@ -99,8 +100,18 @@ export function colgar() {
 // Sube la grabación de una llamada ya registrada. Si no se puede guardar, la acción se queda sin ella.
 /** @param {string} id */
 function guardarGrabacion(id) {
+  grabacionesSubiendo.add(id);
   subirGrabacion().then((ok) => {
-    if (ok) return;
+    grabacionesSubiendo.delete(id);
+    if (ok) {
+      // El reproductor que ya esté en pantalla puede cargar el audio ahora.
+      document.querySelectorAll(`audio[src="${urlGrabacion(id)}"]`).forEach((el) => {
+        const audio = /** @type {HTMLAudioElement} */ (el);
+        audio.preload = 'metadata';
+        audio.load();
+      });
+      return;
+    }
     const a = db.actions.find((x) => x.grabacion === id);
     if (a) {
       delete a.grabacion;

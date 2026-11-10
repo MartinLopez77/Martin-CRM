@@ -62,7 +62,9 @@ test('cola de tareas en la ficha: «Tarea X de N», flechas, completar y tareas 
   await expect(page.locator('.sq-progreso b')).toHaveText('Tarea 3 de 5');
   await expect(page.locator('#llamada')).toBeHidden();
 
-  await page.locator('textarea[name="sq-nota"]').fill('Le ha llegado bien');
+  // En la ficha no hay tarjeta de la tarea: solo la barra de arriba, con la tarea y sus botones
+  await expect(page.locator('.sq-tarea')).toHaveCount(0);
+  await expect(page.locator('.sq-cabecera')).toContainText('WhatsApp a Bruno con la propuesta');
   await page.getByRole('button', { name: '✓ Completar y siguiente' }).click();
   // La siguiente no tiene contacto: se hace en #/cola
   await expect(page).toHaveURL(/#\/cola$/);
@@ -81,7 +83,6 @@ test('cola de tareas en la ficha: «Tarea X de N», flechas, completar y tareas 
   const d = datosGuardados();
   expect(buscar(d.tasks, 'WhatsApp a Bruno con la propuesta').hecha).toBe(true);
   expect(buscar(d.tasks, 'Revisar facturas').fecha).toBe('2026-11-06');
-  expect(d.notes.some((/** @type {any} */ n) => n.contactId === 'c-bruno' && n.contenido === 'Le ha llegado bien')).toBe(true);
   expect(d.actions.some((/** @type {any} */ a) => a.contactId === 'c-bruno' && a.tipo === 'whatsapp')).toBe(true);
 });
 

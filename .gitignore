@@ -4,6 +4,9 @@
 /backups/
 /grabaciones/
 
+# CRM de demostración (npm run demo): datos ficticios que se rehacen al arrancarlo
+/demo/
+
 node_modules/
 
 # Verificación (tests y herramientas)

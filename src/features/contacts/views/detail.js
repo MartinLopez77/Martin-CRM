@@ -15,7 +15,7 @@ import { anadirTareaHTML, editorTareaHTML } from '../../tasks/editor.js';
 import { ordenTareas, pendientesDe } from '../../tasks/store.js';
 import { tareaHTML } from '../../tasks/views/list.js';
 import { enModoCola, limpiarCola, tareaColaActual } from '../../queue/store.js';
-import { activarNotaCola, cabeceraColaHTML, prepararLlamadaCola, tareaColaHTML } from '../../queue/views.js';
+import { cabeceraColaHTML, prepararLlamadaCola } from '../../queue/views.js';
 import { inscripcionActiva, secuencia } from '../../sequences/store.js';
 import { opcionesUsuarios } from '../../team/store.js';
 import { textoProp } from '../../../shared/schema.js';
@@ -56,7 +56,7 @@ export function vistaContacto(id) {
   }
   if (ui.tareaDestacada) ui.fichaTab = 'tareas';
 
-  // Haciendo las tareas una detrás de otra: la tarea en curso va arriba, con «Tarea 2 de 10».
+  // Haciendo las tareas una detrás de otra: arriba solo la barra «Tarea 2 de 10» con la tarea en curso.
   limpiarCola();
   const tCola = enModoCola() ? tareaColaActual() : null;
   const llamando = tCola ? prepararLlamadaCola(tCola, c) : false;
@@ -86,11 +86,7 @@ export function vistaContacto(id) {
   const tab = PESTANAS_FICHA.find((p) => p.id === ui.fichaTab) || PESTANAS_FICHA[0];
 
   app.innerHTML = `
-    ${tCola ? `
-      <div class="cola-ficha">
-        ${cabeceraColaHTML()}
-        <section class="card sq-tarea sq-tarea-ficha">${tareaColaHTML(tCola, c, llamando)}</section>
-      </div>` : '<a href="#/" class="back">← Contactos</a>'}
+    ${tCola ? `<div class="cola-ficha">${cabeceraColaHTML({ t: tCola, c, llamando })}</div>` : '<a href="#/" class="back">← Contactos</a>'}
 
     <div class="ficha-grid">
       <aside class="col-izq">
@@ -172,7 +168,6 @@ export function vistaContacto(id) {
     </div>`;
 
   $('#datos-contacto')?.addEventListener('toggle', (/** @type {Event} */ e) => { ui.datosAbiertos = /** @type {HTMLDetailsElement} */ (e.target).open; });
-  if (tCola) activarNotaCola(tCola);
   activarPanelFicha(tab.id, c);
 
   // Llegando desde Tareas: se resalta la tarea pulsada (desde aquí se edita).

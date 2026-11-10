@@ -17,5 +17,5 @@
     "skipLibCheck": true,
     "maxNodeModuleJsDepth": 0
   },
-  "include": ["src/**/*.js", "server.js", "tests/**/*.mjs", "playwright.config.mjs", "eslint.config.mjs"]
+  "include": ["src/**/*.js", "server.js", "demo.mjs", "tests/**/*.mjs", "playwright.config.mjs", "eslint.config.mjs"]
 }

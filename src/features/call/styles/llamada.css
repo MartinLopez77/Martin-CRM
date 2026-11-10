@@ -3,7 +3,7 @@
 .llamada {
   position: fixed; right: 20px; bottom: 20px; z-index: 900;
   /* Cuadrada: igual de ancha que de alta (si no cabe, se ajusta a la pantalla y el cuerpo se desplaza) */
-  width: 400px; height: 400px; max-width: calc(100vw - 32px); max-height: calc(100vh - 96px);
+  width: 600px; height: 600px; max-width: calc(100vw - 32px); max-height: calc(100vh - 96px);
   display: flex; flex-direction: column;
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: var(--shadow-flotante); overflow: hidden;
@@ -42,7 +42,7 @@
 .ll-duracion { margin: -6px 0 0; }
 .ll-cuerpo .md-ayuda, .ll-cuerpo .md-pantalla { display: none; }
 .ll-pie { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
-.llamada.minimizada { width: 300px; height: auto; }
+.llamada.minimizada { width: 450px; height: auto; }
 .ll-llamar:disabled, .ll-llamar:disabled:hover { opacity: .4; background: var(--ok); border-color: var(--ok); filter: grayscale(.6); }
 /* Resultado sin completar después de colgar: hay que elegirlo para poder cerrar */
 .ll-cuerpo select.falta { border-color: var(--naranja-borde); background: var(--naranja-fondo); box-shadow: 0 0 0 3px var(--naranja-fondo); }

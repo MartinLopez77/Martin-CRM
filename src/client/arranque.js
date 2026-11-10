@@ -1,5 +1,5 @@
 // Arranque: cargar los datos, completar los de versiones anteriores, pintar y mantener la vista al día.
-import { actualizarBadges } from './layout.js';
+import { actualizarBadges, ordenarMenu } from './layout.js';
 import { pintarVista } from './vistas.js';
 import { empresa, empresaPorNombre } from '../features/companies/store.js';
 import { YO } from '../features/team/store.js';
@@ -70,5 +70,6 @@ export async function iniciar() {
   db.settings.propsEmpresaOcultas ||= [];
   db.settings.propsEmpresaExtra ||= [];
   migrar();
+  ordenarMenu();
   render();
 }

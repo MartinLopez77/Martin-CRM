@@ -27,12 +27,12 @@
 .sq-fin-botones { justify-content: center; margin-top: 12px; }
 .sq-cabecera .link-btn.back { margin: 0; color: var(--muted); font-weight: 600; }
 
-/* La tarea en curso encima de la ficha del contacto («Tarea 2 de 10») */
+/* En la ficha del contacto, solo la barra «Tarea 2 de 10» (con la tarea en curso y sus botones) */
 .cola-ficha { margin-bottom: 18px; }
-.cola-ficha .sq-cabecera { margin-bottom: 10px; }
-.sq-tarea-ficha { padding: 16px 20px; gap: 10px; border-top: 3px solid var(--accent); }
-.sq-tarea-ficha .sq-titulo { font-size: 19px; }
-.sq-tarea-ficha .sq-pie { padding-top: 8px; }
+.cola-ficha .sq-cabecera { margin-bottom: 0; flex-wrap: wrap; gap: 10px 18px; }
+.sq-progreso > .small { display: flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; }
+.sq-titulo-barra { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.sq-titulo-barra .ico { width: 13px; height: 13px; color: var(--accent); vertical-align: -2px; }
 
 @media (max-width: 760px) {
   .sq-grid { grid-template-columns: 1fr; }

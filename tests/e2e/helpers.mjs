@@ -17,7 +17,7 @@ export const escribirDatos = (datos) => fs.writeFileSync(DATOS, JSON.stringify(d
 
 /**
  * Espera a que el CRM termine de guardar. El CRM guarda 250 ms después del último cambio y el indicador
- * puede decir «Guardado» por un guardado anterior mientras otro sigue pendiente: por eso se espera a que
+ * (#save-status, sin texto salvo si hay error) puede estar en «ok» por un guardado anterior mientras otro sigue pendiente: por eso se espera a que
  * pase ese retardo y se vuelve a comprobar.
  * @param {import('@playwright/test').Page} page
  */

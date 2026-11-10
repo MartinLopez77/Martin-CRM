@@ -29,10 +29,22 @@ test('ventana de llamada: arrastrar, minimizar y registrar', async ({ page }) =>
   await expect(ventana).toHaveClass(/minimizada/);
   await cabecera.click({ position: { x: 60, y: 15 } });
 
-  // Sin resultado no se puede registrar: viene en «Sin completar»
-  await expect(ventana.locator('[name="ll-resultado"]')).toHaveValue('');
+  // Antes de llamar no se puede poner el resultado ni registrar
+  const resultado = ventana.locator('[name="ll-resultado"]');
+  await expect(resultado).toBeDisabled();
   await expect(ventana.getByRole('button', { name: 'Registrar llamada' })).toBeDisabled();
-  await ventana.locator('[name="ll-resultado"]').selectOption('sin-respuesta');
+  await page.evaluate(() => document.addEventListener('click', (e) => {
+    if (/** @type {Element} */ (e.target).closest('a[href^="tel:"]')) e.preventDefault();
+  }));
+  await ventana.getByRole('link', { name: 'Llamar' }).click();
+  await expect(ventana.locator('.ll-grabando')).toContainText('Grabando');
+  await ventana.getByRole('button', { name: 'Colgar' }).click();
+  // Después de llamar: viene en «Sin completar», que desaparece de la lista al elegir un resultado
+  await expect(resultado).toBeEnabled();
+  await expect(resultado).toHaveValue('');
+  await expect(ventana.getByRole('button', { name: 'Registrar llamada' })).toBeDisabled();
+  await resultado.selectOption('sin-respuesta');
+  await expect(resultado.locator('option', { hasText: 'Sin completar' })).toHaveCount(0);
   await ventana.locator('[name="ll-notas"]').fill('Volver a llamar el lunes');
   await ventana.getByRole('button', { name: 'Registrar llamada' }).click();
   await expect(ventana).toBeHidden();

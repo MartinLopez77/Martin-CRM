@@ -6,6 +6,7 @@ const estadoGuardado = /** @type {HTMLElement} */ (document.getElementById('save
 let temporizadorGuardado;
 let cambiosPendientes = false;
 
+// El indicador de arriba a la derecha solo dice algo si falla el guardado; mientras, solo cambia data-tipo.
 /** @param {string} texto @param {string} tipo */
 function setStatus(texto, tipo) {
   estadoGuardado.textContent = texto;
@@ -15,7 +16,7 @@ function setStatus(texto, tipo) {
 /** Guarda los datos (con un pequeño retardo, para agrupar varios cambios seguidos). */
 export function guardar() {
   cambiosPendientes = true;
-  setStatus('Guardando…', 'saving');
+  setStatus('', 'saving');
   clearTimeout(temporizadorGuardado);
   temporizadorGuardado = setTimeout(enviar, 250);
 }
@@ -29,7 +30,7 @@ async function enviar() {
     });
     if (!r.ok) throw new Error(r.statusText);
     cambiosPendientes = false;
-    setStatus('Guardado', 'ok');
+    setStatus('', 'ok');
   } catch {
     setStatus('Error al guardar. ¿Está abierta la ventana del servidor?', 'error');
   }

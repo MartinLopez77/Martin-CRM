@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['node_modules/', 'backups/', 'test-results/', 'playwright-report/', 'tests/.tmp/'] },
+  { ignores: ['node_modules/', 'backups/', 'test-results/', 'playwright-report/', 'tests/.tmp/', 'demo/'] },
   js.configs.recommended,
   {
     // Cliente: módulos ES en el navegador

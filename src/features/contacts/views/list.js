@@ -4,7 +4,7 @@ import {
   cambiarContacto, cargarVista, filtrarContactos, ordenarContactos, seleccionados, todasLasVistas,
   vistaActual, vistaModificada
 } from '../store.js';
-import { empresa, empresasOrdenadas } from '../../companies/store.js';
+import { empresa } from '../../companies/store.js';
 import { tipoAccionDe } from '../../activity/schema.js';
 import { accionesDe } from '../../activity/store.js';
 import { pendientesDe, proximaTarea } from '../../tasks/store.js';
@@ -73,8 +73,6 @@ export function vistaContactos() {
       ${sel('f-owner', f.ownerId, opcion('', 'Propietario: todos', f.ownerId) + opcion('ninguno', 'Sin propietario', f.ownerId)
         + db.users.map((u) => opcion(u.id, nombreUsuario(u.id), f.ownerId)).join(''), 'Propietario')}
       ${sel('f-estado', f.estado, opcion('', 'Estado: todos', f.estado) + ESTADOS.map((e) => opcion(e.id, e.label, f.estado)).join(''), 'Estado')}
-      ${sel('f-empresa', f.companyId, opcion('', 'Empresa: todas', f.companyId) + opcion('ninguna', 'Sin empresa', f.companyId)
-        + empresasOrdenadas().map((e) => opcion(e.id, e.nombre, f.companyId)).join(''), 'Empresa')}
       ${sel('f-tarea', f.tarea, opcion('', 'Tareas: todas', f.tarea) + opcion('vencida', 'Con tareas vencidas', f.tarea)
         + opcion('hoy', 'Con tareas para hoy', f.tarea) + opcion('sin', 'Sin tareas pendientes', f.tarea), 'Tareas pendientes')}
       ${sel('f-secuencia', f.secuencia, opcion('', 'Secuencia: todas', f.secuencia) + opcion('alguna', 'En alguna secuencia', f.secuencia)
@@ -87,7 +85,7 @@ export function vistaContactos() {
 
   $('#f-q').addEventListener('input', (/** @type {Event} */ e) => { ui.filtros.q = /** @type {HTMLInputElement} */ (e.target).value; renderTablaContactos(); });
   /** @type {[string, keyof import('../schema.js').FiltrosContactos][]} */
-  const selects = [['f-owner', 'ownerId'], ['f-estado', 'estado'], ['f-empresa', 'companyId'], ['f-tarea', 'tarea'], ['f-secuencia', 'secuencia'], ['f-importacion', 'importacion']];
+  const selects = [['f-owner', 'ownerId'], ['f-estado', 'estado'], ['f-tarea', 'tarea'], ['f-secuencia', 'secuencia'], ['f-importacion', 'importacion']];
   selects.forEach(([id, k]) =>
     $('#' + id)?.addEventListener('change', (/** @type {Event} */ e) => { ui.filtros[k] = /** @type {HTMLSelectElement} */ (e.target).value; ui.seleccion.clear(); vistaContactos(); }));
 

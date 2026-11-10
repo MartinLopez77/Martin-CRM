@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js --open",
+    "demo": "node demo.mjs",
     "typecheck": "tsc -p jsconfig.json",
     "lint": "eslint .",
     "test:unit": "node --test \"tests/unit/**/*.test.mjs\"",

@@ -24,6 +24,7 @@
  * @property {string} zonaSecundaria
  * @property {string[]} propsEmpresaOcultas propiedades de empresa desactivadas
  * @property {import('../features/companies/schema.js').PropiedadPropia[]} propsEmpresaExtra propiedades de empresa propias
+ * @property {string[]} [ordenMenu] orden de las secciones del menú lateral (sus data-ruta); sin él, el del HTML
  * @property {string} [entradaLlamada] entrada de audio con la voz del otro al grabar llamadas: '' automático
  *   (la «Mezcla estéreo»), 'ninguna' (solo el micrófono) o el id de la entrada
  */

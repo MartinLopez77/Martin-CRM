@@ -17,6 +17,9 @@ export function accionExistente(id) {
 /** URL de la grabación de una llamada (el audio lo guarda el servidor en grabaciones/). @param {string} id */
 export const urlGrabacion = (id) => `/api/grabaciones/${encodeURIComponent(id)}`;
 
+/** Grabaciones que aún se están subiendo al servidor: su reproductor no pide el audio hasta que estén. */
+export const grabacionesSubiendo = new Set();
+
 /** Borra del servidor la grabación `id` (al borrar su acción o su contacto). @param {string | null | undefined} id */
 export function borrarGrabacion(id) {
   if (id) fetch(urlGrabacion(id), { method: 'DELETE' }).catch(() => { /* sin servidor: se queda el archivo */ });

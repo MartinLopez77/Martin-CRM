@@ -19,6 +19,20 @@ test('menú lateral y reloj con la hora secundaria (Ajustes)', async ({ page }) 
   await expect(page.locator('#reloj')).not.toContainText('NY');
 });
 
+test('menú lateral: las secciones se reordenan arrastrándolas y el orden se guarda', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#menu-btn').click();
+  const rutas = () => page.locator('#menu .menu-grupo').first().locator('a').evaluateAll((as) => as.map((a) => /** @type {HTMLElement} */ (a).dataset.ruta));
+  await page.locator('#menu a[data-ruta="tareas"]').dragTo(page.locator('#menu a[data-ruta="dashboard"]'), { targetPosition: { x: 20, y: 2 } });
+  await expect.poll(rutas).toEqual(['tareas', 'dashboard', 'contactos', 'empresas', 'secuencias']);
+  await expect(page).not.toHaveURL(/#\/tareas/); // arrastrar no navega
+  await esperarGuardado(page);
+  expect(datosGuardados().settings.ordenMenu.slice(0, 2)).toEqual(['tareas', 'dashboard']);
+
+  await page.reload();
+  expect(await rutas()).toEqual(['tareas', 'dashboard', 'contactos', 'empresas', 'secuencias']);
+});
+
 test('equipo: añadir persona, asignarle un contacto y ver sus contactos', async ({ page }) => {
   await page.goto('/#/equipo');
   await page.getByRole('button', { name: '+ Añadir persona' }).click();

@@ -20,6 +20,7 @@ Node sin dependencias guarda todo en `data.json` y sirve una app de JavaScript v
 |---|---|
 | Arrancar el CRM (abre el navegador) | doble clic en `Abrir CRM.bat`, o `npm start` |
 | Servidor sin abrir navegador | `node server.js` (puerto 3000; otro con `PORT=…`) |
+| CRM de demostración (datos ficticios + 15 contactos, puerto 3001) | `npm run demo` (se rehace en `demo/`, no toca `data.json`) |
 | Comprobar tipos | `npm run typecheck` |
 | Lint | `npm run lint` |
 | Tests de lógica (rápidos) | `npm run test:unit` |

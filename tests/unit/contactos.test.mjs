@@ -18,7 +18,8 @@ test('filtros de la tabla de contactos', () => {
   assert.deepEqual(nombres({}), ['Ana Ruiz', 'Bruno Sanz', 'Carla Vidal', 'Diego Mora']);
   assert.deepEqual(nombres({ estado: 'negociacion' }), ['Bruno Sanz']);
   assert.deepEqual(nombres({ ownerId: 'ninguno' }), ['Carla Vidal']);
-  assert.deepEqual(nombres({ companyId: 'e-luz' }), ['Ana Ruiz', 'Carla Vidal']);
+  // Ya no hay filtro de empresa: el de una vista guardada antes se ignora
+  assert.equal(filtrarContactos(/** @type {any} */ ({ ...FILTROS_VACIOS, companyId: 'e-luz' })).length, 4);
   assert.deepEqual(nombres({ tarea: 'vencida' }), ['Diego Mora']);
   assert.deepEqual(nombres({ tarea: 'sin' }), ['Carla Vidal']);
   assert.deepEqual(nombres({ q: 'clínica' }), ['Ana Ruiz', 'Carla Vidal']); // por empresa

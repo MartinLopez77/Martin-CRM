@@ -31,7 +31,11 @@
 }
 .menu-btn span { display: block; width: 18px; height: 2px; border-radius: 2px; background: currentColor; }
 .menu-btn:hover { background: var(--surface-2); }
-.menu a.menu-pie { margin-top: auto; }
+.menu-grupo { display: flex; flex-direction: column; gap: 2px; }
+.menu-grupo.menu-pie { margin-top: auto; }
+/* Reordenar las secciones arrastrándolas */
+.menu-grupo a { cursor: grab; }
+.menu-grupo a.arrastrando { opacity: .45; background: var(--surface-2); cursor: grabbing; }
 
 /* Menú lateral */
 .menu {

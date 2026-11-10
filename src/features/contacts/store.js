@@ -87,7 +87,6 @@ export function filtrarContactos(f) {
   return db.contacts.filter((c) => {
     if (f.estado && c.estado !== f.estado) return false;
     if (f.ownerId && (f.ownerId === 'ninguno' ? c.ownerId : c.ownerId !== f.ownerId)) return false;
-    if (f.companyId && (f.companyId === 'ninguna' ? c.companyId : c.companyId !== f.companyId)) return false;
     if (f.importacion && (c.importacion || '') !== f.importacion) return false;
     if (f.tarea) {
       const pend = pendientesDe(c.id);

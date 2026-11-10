@@ -4,6 +4,7 @@ import { buscador } from '../features/search/search.js';
 import { enLocal, zonaSecundaria } from '../features/settings/horas.js';
 import { modalRapido } from '../features/tasks/editor.js';
 import { horaActual, hoy } from '../shared/lib/dates.js';
+import { guardar } from '../shared/persistence.js';
 import { db } from '../shared/state.js';
 import { ico } from '../shared/ui/icons.js';
 import { modal } from '../shared/ui/modal.js';
@@ -24,6 +25,46 @@ menuBtn.addEventListener('click', () => abrirMenu(!document.body.classList.conta
 /** @type {HTMLElement} */ (document.getElementById('menu-cerrar')).addEventListener('click', () => abrirMenu(false));
 /** @type {HTMLElement} */ (document.getElementById('menu-fondo')).addEventListener('click', () => abrirMenu(false));
 menu.addEventListener('click', (e) => { if (/** @type {Element} */ (e.target).closest('a')) abrirMenu(false); });
+
+// Las secciones del menú se reordenan arrastrándolas, cada una dentro de su grupo (arriba o abajo del todo).
+/** @type {HTMLElement | null} */
+let arrastrada = null;
+
+/** Pone las secciones del menú en el orden guardado en los ajustes (las que no estén, al final de su grupo). */
+export function ordenarMenu() {
+  const orden = db.settings.ordenMenu || [];
+  const pos = (/** @type {Element} */ a) => { const i = orden.indexOf(/** @type {string} */ (/** @type {HTMLElement} */ (a).dataset.ruta)); return i < 0 ? Infinity : i; };
+  menu.querySelectorAll('.menu-grupo').forEach((g) => [...g.children].sort((a, b) => pos(a) - pos(b)).forEach((a) => g.append(a)));
+}
+
+menu.querySelectorAll('.menu-grupo a').forEach((a) => /** @type {HTMLElement} */ (a).setAttribute('draggable', 'true'));
+menu.addEventListener('dragstart', (e) => {
+  arrastrada = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest?.('.menu-grupo a'));
+  if (!arrastrada || !e.dataTransfer) return;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', arrastrada.dataset.ruta || '');
+  arrastrada.classList.add('arrastrando');
+});
+menu.addEventListener('dragover', (e) => {
+  const sobre = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest?.('.menu-grupo a'));
+  if (!arrastrada || !sobre || sobre.parentElement !== arrastrada.parentElement) return;
+  e.preventDefault(); // permite soltar aquí
+  if (sobre === arrastrada) return;
+  const r = sobre.getBoundingClientRect();
+  if (e.clientY < r.top + r.height / 2) sobre.before(arrastrada);
+  else sobre.after(arrastrada);
+});
+menu.addEventListener('drop', (e) => { if (arrastrada) e.preventDefault(); });
+menu.addEventListener('dragend', () => {
+  if (!arrastrada) return;
+  arrastrada.classList.remove('arrastrando');
+  arrastrada = null;
+  const orden = [...menu.querySelectorAll('.menu-grupo a')].map((a) => /** @type {string} */ (/** @type {HTMLElement} */ (a).dataset.ruta));
+  if (JSON.stringify(orden) === JSON.stringify(db.settings.ordenMenu || [])) return;
+  db.settings.ordenMenu = orden;
+  guardar();
+});
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.body.classList.contains('menu-abierto')) {
     abrirMenu(false);

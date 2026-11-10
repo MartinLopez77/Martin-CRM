@@ -26,22 +26,41 @@ export function prepararLlamadaCola(t, c) {
   return llamando;
 }
 
-export function cabeceraColaHTML() {
+// La barra de progreso («Tarea 2 de 10»). En la ficha del contacto no hay tarjeta de la tarea: la barra
+// lleva entonces `ficha` (la tarea en curso) con su título y los botones para completarla o pasarla a mañana.
+/** @param {{ t: import('../tasks/schema.js').Tarea, c: import('../contacts/schema.js').Contacto, llamando: boolean }} [ficha] */
+export function cabeceraColaHTML(ficha) {
   const cola = colaActiva();
   const total = cola.ids.length;
   const hechas = cola.ids.filter((id) => tareaExistente(id).hecha).length;
+  const t = ficha?.t;
+  const ta = t?.accion && tipoAccionDe(t.accion);
   return `
     <div class="sq-cabecera">
       <button class="link-btn back" data-action="sq-salir">← Salir</button>
       <div class="sq-progreso">
         <div class="small"><b>${cola.i < total ? `Tarea ${cola.i + 1} de ${total}` : 'Fin de las tareas'}</b>
-          <span class="muted">· ${hechas} completada${plural(hechas)}</span></div>
+          <span class="muted">· ${hechas} completada${plural(hechas)}</span>
+          ${t ? `<span class="sq-titulo-barra" title="${esc(t.titulo)}">· ${ta ? ico(ta.icon) : ''} ${esc(t.titulo)}</span>` : ''}</div>
         <div class="sq-barra"><i style="width:${(hechas / total) * 100}%"></i></div>
       </div>
+      ${ficha && t ? botonesColaFicha(t, ficha.c, ficha.llamando) : ''}
       <div class="row">
         <button class="btn sm" data-action="sq-anterior" ${cola.i === 0 ? 'disabled' : ''} title="Anterior (←)">← Anterior</button>
         <button class="btn sm" data-action="sq-ir" data-i="${cola.i + 1}" ${cola.i >= total ? 'disabled' : ''} title="Siguiente (→)">Siguiente →</button>
       </div>
+    </div>`;
+}
+
+/** @param {import('../tasks/schema.js').Tarea} t @param {import('../contacts/schema.js').Contacto} c @param {boolean} llamando */
+function botonesColaFicha(t, c, llamando) {
+  if (t.hecha) return '<div class="row"><span class="sq-hecha small">✓ Completada</span><button class="btn sm" data-action="sq-reabrir">Marcar como pendiente</button></div>';
+  return `
+    <div class="row">
+      ${llamando && ui.llamada?.taskId !== t.id ? `<button class="btn sm" data-action="abrir-llamada" data-id="${c.id}" data-tarea="${t.id}">${ico('telefono')} Abrir llamada</button>` : ''}
+      <button class="btn sm primary" data-action="sq-completar" title="Ctrl+Enter">✓ ${llamando ? 'Registrar llamada y siguiente' : 'Completar y siguiente'}</button>
+      ${REUNIONES.includes(/** @type {string} */ (t.accion)) ? `<button class="btn sm" data-action="sq-cancelada" title="La reunión no se hizo">${ico('cancelado')} Cancelada</button>` : ''}
+      <button class="btn sm" data-action="sq-posponer">Pasar a mañana</button>
     </div>`;
 }
 

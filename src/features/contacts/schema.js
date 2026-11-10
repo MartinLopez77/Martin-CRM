@@ -26,7 +26,8 @@ import { nombreUsuario, YO } from '../team/store.js';
  * @property {string} [actualizado]
  */
 
-/** @typedef {{ q: string, estado: string, ownerId: string, companyId: string, tarea: string, secuencia: string, importacion: string }} FiltrosContactos */
+// (Las vistas guardadas antes pueden traer también companyId: ya no hay filtro de empresa y se ignora.)
+/** @typedef {{ q: string, estado: string, ownerId: string, tarea: string, secuencia: string, importacion: string }} FiltrosContactos */
 /** @typedef {{ campo: string, dir: 'asc' | 'desc' }} Orden */
 /** @typedef {{ id: string, nombre: string, filtros: Partial<FiltrosContactos>, orden: Partial<Orden>, fija?: boolean }} VistaContactos */
 
@@ -70,7 +71,7 @@ export const urlHubspot = (id) => `https://app.hubspot.com/contacts/${HUBSPOT_PO
 
 // Vistas de la tabla de contactos (como en HubSpot). Las propias se guardan en db.views.
 /** @type {FiltrosContactos} */
-export const FILTROS_VACIOS = { q: '', estado: '', ownerId: '', companyId: '', tarea: '', secuencia: '', importacion: '' };
+export const FILTROS_VACIOS = { q: '', estado: '', ownerId: '', tarea: '', secuencia: '', importacion: '' };
 /** @type {Orden} */
 export const ORDEN_DEFECTO = { campo: 'actualizado', dir: 'desc' };
 /** @type {VistaContactos[]} */

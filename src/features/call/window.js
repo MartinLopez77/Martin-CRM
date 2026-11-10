@@ -23,6 +23,7 @@ export function pintarLlamada() {
   const t = L.taskId ? tarea(L.taskId) : undefined;
   const seg = segundosLlamada(L);
   const tel = L.telefono.trim();
+  const llamada = llamadaPendiente(L); // ya se ha llamado (o se está llamando)
   ventanaLlamada.classList.toggle('minimizada', L.minimizada);
   ventanaLlamada.innerHTML = `
     <div class="ll-cabecera" data-ll="minimizar" title="Arrastra para moverla · clic para ${L.minimizada ? 'desplegar' : 'minimizar'} · doble clic para devolverla a su sitio">
@@ -55,15 +56,16 @@ export function pintarLlamada() {
         ${!L.inicio && L.duracion ? `<p class="muted small ll-duracion">Duración: ${fmtDuracion(seg)}</p>` : ''}
         ${estadoGrabacion(L)}
         <label class="field"><span>Resultado</span>
-          <select name="ll-resultado" class="${L.terminada && !L.resultado ? 'falta' : ''}">
-            <option value="" ${L.resultado ? '' : 'selected'}>Sin completar</option>
+          <!-- Hasta llamar no hay resultado; «Sin completar» solo está mientras no se ha elegido ninguno -->
+          <select name="ll-resultado" class="${L.terminada && !L.resultado ? 'falta' : ''}" ${llamada ? '' : 'disabled title="Llama primero"'}>
+            ${L.resultado ? '' : '<option value="" selected>Sin completar</option>'}
             ${opciones(RESULTADOS_LLAMADA, L.resultado)}
           </select>
         </label>
         <div class="field"><span>Notas de la llamada</span>${editorHTML('ll-notas', L.notas, 3, 'Qué te ha dicho, próximos pasos…')}</div>
       </div>
       <div class="ll-pie">
-        <button type="button" class="btn primary" data-ll="registrar" ${L.resultado ? '' : 'disabled title="Elige antes el resultado de la llamada"'}>${t && !t.hecha ? 'Registrar y completar tarea' : 'Registrar llamada'}</button>
+        <button type="button" class="btn primary" data-ll="registrar" ${!llamada ? 'disabled title="Llama primero"' : L.resultado ? '' : 'disabled title="Elige antes el resultado de la llamada"'}>${t && !t.hecha ? 'Registrar y completar tarea' : 'Registrar llamada'}</button>
       </div>`}`;
   activarEditores(ventanaLlamada);
   colocarLlamada();

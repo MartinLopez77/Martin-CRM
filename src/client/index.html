@@ -42,13 +42,18 @@
       <svg class="brand-logo"><use href="#logo-arroz"/></svg>
       <button type="button" class="icon-btn" id="menu-cerrar" aria-label="Cerrar menú" title="Cerrar (Esc)" data-ico="cerrar"></button>
     </div>
-    <a href="#/dashboard" data-ruta="dashboard"><span class="menu-icono" data-ico="grafico"></span> Dashboard</a>
-    <a href="#/" data-ruta="contactos"><span class="menu-icono" data-ico="persona"></span> Contactos</a>
-    <a href="#/empresas" data-ruta="empresas"><span class="menu-icono" data-ico="empresa"></span> Empresas</a>
-    <a href="#/tareas" data-ruta="tareas"><span class="menu-icono" data-ico="check"></span> Tareas <span id="badge-tareas" class="badge"></span></a>
-    <a href="#/secuencias" data-ruta="secuencias"><span class="menu-icono" data-ico="secuencia"></span> Secuencias</a>
-    <a href="#/equipo" data-ruta="equipo" class="menu-pie"><span class="menu-icono" data-ico="reunion"></span> Equipo</a>
-    <a href="#/ajustes" data-ruta="ajustes"><span class="menu-icono" data-ico="ajustes"></span> Ajustes</a>
+    <!-- Las secciones se reordenan arrastrándolas (dentro de su grupo); el orden se guarda en los ajustes. -->
+    <div class="menu-grupo">
+      <a href="#/dashboard" data-ruta="dashboard"><span class="menu-icono" data-ico="grafico"></span> Dashboard</a>
+      <a href="#/" data-ruta="contactos"><span class="menu-icono" data-ico="persona"></span> Contactos</a>
+      <a href="#/empresas" data-ruta="empresas"><span class="menu-icono" data-ico="empresa"></span> Empresas</a>
+      <a href="#/tareas" data-ruta="tareas"><span class="menu-icono" data-ico="check"></span> Tareas <span id="badge-tareas" class="badge"></span></a>
+      <a href="#/secuencias" data-ruta="secuencias"><span class="menu-icono" data-ico="secuencia"></span> Secuencias</a>
+    </div>
+    <div class="menu-grupo menu-pie">
+      <a href="#/equipo" data-ruta="equipo"><span class="menu-icono" data-ico="reunion"></span> Equipo</a>
+      <a href="#/ajustes" data-ruta="ajustes"><span class="menu-icono" data-ico="ajustes"></span> Ajustes</a>
+    </div>
   </nav>
 
   <main id="app" class="container">
