@@ -13,6 +13,7 @@ import {
 import { inscripcion, secuencia } from '../../sequences/store.js';
 import { conLocal } from '../../settings/horas.js';
 import { nombreUsuario } from '../../team/store.js';
+import { urlGoogleCalendar } from '../../../shared/lib/calendario.js';
 import { claseFecha, fmtCuando, hoy, sumarDias, tituloDia } from '../../../shared/lib/dates.js';
 import { ahora, esc, uid } from '../../../shared/lib/text.js';
 import { guardar } from '../../../shared/persistence.js';
@@ -235,6 +236,8 @@ export function tareaHTML(t, mostrarContacto = true) {
     notaLink,
     !t.hecha && REUNIONES.includes(/** @type {string} */ (t.accion))
       ? `<button class="td-cancelar-btn" data-action="cancelar-reunion" data-id="${t.id}" title="La reunión no se hizo: queda registrada como cancelada">${ico('cancelado')} Cancelada</button>` : '',
+    !t.hecha && t.fecha && REUNIONES.includes(/** @type {string} */ (t.accion))
+      ? `<a class="td-cancelar-btn" href="${esc(urlGoogleCalendar({ titulo: c ? `${t.titulo} · ${c.nombre}` : t.titulo, detalle: t.detalle, fecha: t.fecha, hora: t.hora }))}" target="_blank" rel="noopener" title="Abre Google Calendar con la reunión ya rellenada">${ICONO_CAL} Añadir a Calendar</a>` : '',
     seq ? `<a class="seq-pill" href="#/secuencias/${seq.id}" title="Paso ${/** @type {number} */ (t.paso) + 1} de la secuencia «${esc(seq.nombre)}»">${ico('secuencia')} ${esc(seq.nombre)} · ${/** @type {number} */ (t.paso) + 1}/${seq.pasos.length}</a>` : '',
     mostrarContacto && c ? `<a class="td-proyecto" href="#/contacto/${c.id}">${esc(c.nombre)}${empresaDe(c) ? ` · ${esc(empresaDe(c))}` : ''} <span>#</span></a>` : '',
     !c && t.lista && ui.tareasVista !== 'generales' ? `<span class="td-proyecto">${esc(t.lista)} <span>#</span></span>` : '',
